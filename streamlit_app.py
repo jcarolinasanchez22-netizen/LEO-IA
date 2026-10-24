@@ -12,7 +12,7 @@ st.set_page_config(
 # ======================
 API_KEY = st.secrets.get("API_KEY")
 genai.configure(api_key=API_KEY)
-modelo = genai.GenerativeModel("gemini-1.5-flash")
+modelo = genai.GenerativeModel("gemini-2.0-flash")
 
 CUENTO = """
 📖 El cuaderno perdido
