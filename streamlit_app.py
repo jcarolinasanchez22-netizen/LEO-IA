@@ -10,7 +10,7 @@ st.set_page_config(
 # ======================
 # PEGA TU CLAVE AQUÍ 👇
 # ======================
-API_KEY = "AQ.Ab8RN6JUo_wwSxk0Y4spYr-Y2GuVfXomvrXaDeHauHOVPp0iKg"
+API_KEY = st.secrets.get("API_KEY")
 genai.configure(api_key=API_KEY)
 modelo = genai.GenerativeModel("gemini-1.5-flash")
 
