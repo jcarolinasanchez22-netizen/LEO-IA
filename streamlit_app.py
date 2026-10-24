@@ -8,19 +8,20 @@ st.set_page_config(
     layout="wide"
 )
 
-# Obtener la clave de forma segura
+# Obtener la clave
 API_KEY = st.secrets.get("API_KEY")
 
 if not API_KEY:
-    st.error("⚠️ Falta configurar la clave API en Secrets")
+    st.error("⚠️ Falta la clave API en Secrets")
     st.stop()
 
+# Configurar con la clave AQ
 genai.configure(api_key=API_KEY)
 
-# Modelo a usar
-modelo = genai.GenerativeModel("gemini-2.0-flash")
+# Modelo compatible con claves nuevas
+modelo = genai.GenerativeModel("gemini-2.0-flash-exp")
 
-# El cuento completo
+# El cuento
 CUENTO = """
 El cuaderno perdido
 
@@ -37,59 +38,49 @@ Lo llevó al colegio y preguntó a todos sus compañeros, pero nadie lo reconoci
 Mateo sonrió. Sintió una satisfacción inmensa al devolverlo. Desde ese día, se convirtieron en grandes amigos.
 """
 
-# Título principal
+# Título
 st.title("🦁 LEO-IA — Asistente de Comprensión Lectora")
 st.subheader("Lengua y Literatura • Noveno Año de EGB • Ecuador")
 st.divider()
 
-# Botón para mostrar el cuento
 if st.button("📖 Leer el cuento"):
     st.markdown(CUENTO)
     st.divider()
 
-# Inicializar historial de conversación
+# Historial
 if "historial" not in st.session_state:
     st.session_state.historial = [
-        {
-            "rol": "asistente",
-            "mensaje": "¡Hola! Soy LEO-IA, tu asistente de comprensión lectora. No resolveré las actividades por ti, pero te acompañaré con preguntas y pistas. Hoy trabajaremos con el cuento «El cuaderno perdido». ¿Empezamos?"
-        }
+        {"rol": "asistente", "mensaje": "¡Hola! Soy LEO-IA, tu asistente de comprensión lectora. No resolveré las actividades por ti, pero te acompañaré con preguntas y pistas. Hoy trabajaremos con el cuento «El cuaderno perdido». ¿Empezamos?"}
     ]
 
-# Mostrar mensajes
 for msg in st.session_state.historial:
     if msg["rol"] == "asistente":
         st.info(msg["mensaje"], icon="🦁")
     else:
         st.chat_message("usuario").write(msg["mensaje"])
 
-# Entrada del usuario
-pregunta = st.chat_input("Escribe tu pregunta o respuesta aquí...")
+pregunta = st.chat_input("Escribe tu pregunta aquí...")
 
 if pregunta:
-    # Guardar la pregunta del usuario
     st.session_state.historial.append({"rol": "usuario", "mensaje": pregunta})
     
-    # Instrucción para el asistente
     instruccion = f"""
-Eres LEO-IA, un asistente de comprensión lectora para estudiantes de noveno año de Educación General Básica en Ecuador.
-Tu función es guiar al estudiante con PISTAS y PREGUNTAS, NUNCA darle las respuestas directas.
-Usa un tono amable, alentador y claro.
+Eres LEO-IA, guía de comprensión lectora para noveno año.
+NO des respuestas directas. Da pistas y preguntas para que el estudiante piense.
+Tono amable, claro y alentador.
 
-Aquí está el cuento:
+CUENTO:
 {CUENTO}
 
-Pregunta del estudiante: {pregunta}
-Responde como LEO-IA, guiando con pistas sin dar la respuesta completa.
+PREGUNTA: {pregunta}
+Responde con pistas, sin dar la respuesta completa.
 """
 
-    # Obtener respuesta del modelo
     try:
         respuesta = modelo.generate_content(instruccion)
-        texto_respuesta = respuesta.text
+        texto = respuesta.text
     except Exception as e:
-        texto_respuesta = "😅 Lo siento, hubo un pequeño detalle. Intenta de nuevo, por favor."
+        texto = f"😅 Detalle técnico: {str(e)[:100]}"
     
-    # Guardar y recargar
-    st.session_state.historial.append({"rol": "asistente", "mensaje": texto_respuesta})
+    st.session_state.historial.append({"rol": "asistente", "mensaje": texto})
     st.rerun()
