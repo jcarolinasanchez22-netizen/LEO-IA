@@ -18,7 +18,7 @@ if not API_KEY:
 genai.configure(api_key=API_KEY)
 
 # Modelo a usar
-modelo = genai.GenerativeModel("gemini-1.5-flash")
+modelo = genai.GenerativeModel("gemini-2.0-flash")
 
 # El cuento completo
 CUENTO = """
