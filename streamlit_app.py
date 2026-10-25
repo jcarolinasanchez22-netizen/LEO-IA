@@ -1,5 +1,5 @@
-import streamlit as st
 import google.generativeai as genai
+import streamlit as st
 
 # Configuración de la página
 st.set_page_config(
@@ -19,7 +19,7 @@ if not API_KEY:
 genai.configure(api_key=API_KEY)
 
 # Modelo compatible con claves nuevas
-modelo = genai.GenerativeModel("gemini-1.5-flash-001")
+modelo = genai.GenerativeModel("gemini-pro")
 # El cuento
 CUENTO = """
 El cuaderno perdido
