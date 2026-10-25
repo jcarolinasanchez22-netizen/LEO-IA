@@ -4,15 +4,17 @@ import streamlit as st
 st.set_page_config(
     page_title="LEO-IA | Comprensión lectora",
     page_icon="📚",
-    layout="centered"
+    layout="wide"
 )
 
-# -------------------------------
-# CONFIGURACIÓN DE LAS LECTURAS
-# -------------------------------
+# ==========================================
+# CINCO CUENTOS
+# ==========================================
 
 lecturas = {
-    "1. El cuaderno perdido": {
+    "El cuaderno perdido": {
+        "emoji": "📘",
+        "descripcion": "Descubre cómo Mateo ayuda a una niña a recuperar su cuaderno.",
         "texto": """
 Una mañana, Mateo caminaba hacia el colegio por un parque.
 Mientras caminaba, encontró un cuaderno azul que tenía dibujos
@@ -49,7 +51,9 @@ que no nos pertenecen.
         ]
     },
 
-    "2. La niña y el árbol": {
+    "La niña y el árbol": {
+        "emoji": "🌳",
+        "descripcion": "Acompaña a Lucía y aprende por qué debemos cuidar la naturaleza.",
         "texto": """
 Lucía era una niña que disfrutaba jugar en el jardín de su casa.
 Un día, su maestra les explicó a los estudiantes la importancia
@@ -75,14 +79,16 @@ y a sus amigos a sembrar más árboles.
              "Decidió sembrar una pequeña planta."),
             ("¿Qué hacía todos los días para cuidar la planta?",
              "La regaba y se aseguraba de que recibiera luz del sol."),
-            ("¿Qué animales encontraron sombra en el árbol?",
+            ("¿Qué animales encontraban sombra en el árbol?",
              "Los pájaros."),
             ("¿Qué enseñanza aprendió Lucía?",
-             "Que debemos cuidar la naturaleza con paciencia y responsabilidad.")
+             "Debemos cuidar la naturaleza con paciencia y responsabilidad.")
         ]
     },
 
-    "3. Un amigo especial": {
+    "Un amigo especial": {
+        "emoji": "🤝",
+        "descripcion": "Conoce a Andrés y descubre el valor de la amistad.",
         "texto": """
 Andrés era un estudiante nuevo en la escuela. El primer día
 se sentó solo en el recreo porque todavía no conocía a nadie.
@@ -117,7 +123,9 @@ que llegaban nuevos a la escuela.
         ]
     },
 
-    "4. El perro aventurero": {
+    "El perro aventurero": {
+        "emoji": "🐶",
+        "descripcion": "Acompaña a Toby en una aventura en la que ayuda a otro animal.",
         "texto": """
 Toby era un perro curioso que vivía con una familia en una casa
 cerca del campo. Le encantaba correr por el jardín y observar
@@ -153,7 +161,9 @@ y no alejarse demasiado de casa.
         ]
     },
 
-    "5. La importancia de compartir": {
+    "La importancia de compartir": {
+        "emoji": "🎨",
+        "descripcion": "Aprende con Valentina y Miguel por qué es importante compartir.",
         "texto": """
 En el salón de clases, Valentina llevó una caja de lápices
 de colores que había recibido como regalo. Le gustaba dibujar
@@ -190,155 +200,195 @@ y trabajaron juntos con alegría.
     }
 }
 
-# -------------------------------
+# ==========================================
 # ESTADO DE LA APLICACIÓN
-# -------------------------------
+# ==========================================
 
-if "lectura_activa" not in st.session_state:
-    st.session_state.lectura_activa = None
+if "cuento_seleccionado" not in st.session_state:
+    st.session_state.cuento_seleccionado = None
 
-if "numero_pregunta" not in st.session_state:
-    st.session_state.numero_pregunta = 0
+if "pregunta_actual" not in st.session_state:
+    st.session_state.pregunta_actual = 0
 
 if "respuestas" not in st.session_state:
     st.session_state.respuestas = {}
 
-if "terminado" not in st.session_state:
-    st.session_state.terminado = False
+if "actividad_terminada" not in st.session_state:
+    st.session_state.actividad_terminada = False
 
 
 def reiniciar_actividad():
-    st.session_state.numero_pregunta = 0
+    st.session_state.pregunta_actual = 0
     st.session_state.respuestas = {}
-    st.session_state.terminado = False
+    st.session_state.actividad_terminada = False
 
 
-# -------------------------------
-# ENCABEZADO
-# -------------------------------
+# ==========================================
+# PANTALLA PRINCIPAL
+# ==========================================
 
 st.title("📚 LEO-IA")
-st.subheader("¡Aprendamos leyendo!")
+st.subheader("¡Bienvenido a tu aventura de lectura!")
+
 st.write(
-    "Escoge una lectura, comprende su historia y responde "
-    "las preguntas con tus propias palabras."
+    "Selecciona el cuento que más te guste. "
+    "Lee con atención y demuestra cuánto comprendiste."
 )
 
 st.divider()
 
-# -------------------------------
-# SELECCIÓN DE LA LECTURA
-# -------------------------------
+# Mostrar los cinco cuentos en tarjetas
+if st.session_state.cuento_seleccionado is None:
 
-opciones = list(lecturas.keys())
+    st.markdown("### 📖 Escoge el cuento que deseas trabajar")
 
-seleccion = st.selectbox(
-    "📖 ¿Qué lectura deseas leer?",
-    opciones,
-    key="selector_lectura"
-)
+    nombres = list(lecturas.keys())
 
-if st.session_state.lectura_activa != seleccion:
-    st.session_state.lectura_activa = seleccion
-    reiniciar_actividad()
+    # Dos tarjetas por fila
+    for inicio in range(0, len(nombres), 2):
+        columnas = st.columns(2)
 
-lectura = lecturas[seleccion]
+        for desplazamiento, columna in enumerate(columnas):
+            indice = inicio + desplazamiento
 
-# -------------------------------
-# MOSTRAR LA LECTURA
-# -------------------------------
+            if indice >= len(nombres):
+                continue
 
-st.header(seleccion)
+            nombre = nombres[indice]
+            cuento = lecturas[nombre]
 
-with st.expander("📘 Leer la historia completa", expanded=True):
-    st.write(lectura["texto"])
+            with columna:
+                with st.container(border=True):
+                    st.markdown(
+                        f"## {cuento['emoji']} {nombre}"
+                    )
+                    st.write(cuento["descripcion"])
+                    st.caption("📚 1 lectura · 5 preguntas")
 
-st.info(
-    "Lee con atención. Cuando estés listo, responde las preguntas "
-    "que aparecerán a continuación."
-)
+                    if st.button(
+                        "Leer este cuento ➜",
+                        key=f"elegir_{indice}",
+                        use_container_width=True
+                    ):
+                        st.session_state.cuento_seleccionado = nombre
+                        reiniciar_actividad()
+                        st.rerun()
 
-st.divider()
-
-# -------------------------------
-# PREGUNTAS UNA POR UNA
-# -------------------------------
-
-preguntas = lectura["preguntas"]
-total = len(preguntas)
-
-if not st.session_state.terminado:
-
-    actual = st.session_state.numero_pregunta
-
-    if actual < total:
-        pregunta, respuesta_esperada = preguntas[actual]
-
-        st.subheader(f"✏️ Pregunta {actual + 1} de {total}")
-        st.progress((actual + 1) / total)
-        st.write(f"**{pregunta}**")
-
-        clave = f"respuesta_{seleccion}_{actual}"
-
-        with st.form(key=f"formulario_{actual}"):
-            respuesta = st.text_area(
-                "Escribe tu respuesta aquí:",
-                value=st.session_state.respuestas.get(clave, ""),
-                placeholder="Escribe tu respuesta con tus propias palabras...",
-                height=120
-            )
-
-            enviar = st.form_submit_button(
-                "Guardar y continuar ➡️",
-                use_container_width=True
-            )
-
-        if enviar:
-            if not respuesta.strip():
-                st.warning("Escribe una respuesta antes de continuar.")
-            else:
-                st.session_state.respuestas[clave] = respuesta.strip()
-
-                if actual + 1 < total:
-                    st.session_state.numero_pregunta += 1
-                else:
-                    st.session_state.terminado = True
-
-                st.rerun()
-
-# -------------------------------
-# RESULTADOS FINALES
-# -------------------------------
-
-if st.session_state.terminado:
-    st.success("🎉 ¡Has terminado la lectura y todas las preguntas!")
-
-    st.header("📝 Revisión de tus respuestas")
-    st.write(
-        "Compara tus respuestas con las sugeridas. "
-        "Puedes revisar la lectura si necesitas recordar algún detalle."
+    st.divider()
+    st.info(
+        "💡 Consejo: lee cada cuento con calma. "
+        "Puedes volver a consultar la historia mientras respondes."
     )
 
-    for i, (pregunta, respuesta_esperada) in enumerate(preguntas):
-        clave = f"respuesta_{seleccion}_{i}"
+# ==========================================
+# PANTALLA DEL CUENTO SELECCIONADO
+# ==========================================
 
-        st.markdown(f"**{i + 1}. {pregunta}**")
-        st.write("**Tu respuesta:**")
-        st.write(st.session_state.respuestas.get(clave, "Sin respuesta"))
-        st.write("**Respuesta sugerida:**")
-        st.write(respuesta_esperada)
-        st.divider()
+else:
+    nombre = st.session_state.cuento_seleccionado
+    cuento = lecturas[nombre]
 
-    st.subheader("🌟 ¡Buen trabajo!")
-    st.write(
-        "Leer y responder preguntas te ayuda a comprender mejor "
-        "las historias. Sigue practicando."
-    )
-
-    if st.button("🔄 Resolver otra vez esta lectura",
-                 use_container_width=True):
+    if st.button("⬅️ Volver a los cinco cuentos"):
+        st.session_state.cuento_seleccionado = None
         reiniciar_actividad()
         st.rerun()
 
+    st.header(f"{cuento['emoji']} {nombre}")
+
+    with st.expander("📖 Leer el cuento completo", expanded=True):
+        st.write(cuento["texto"])
+
+    st.divider()
+
+    preguntas = cuento["preguntas"]
+    total = len(preguntas)
+
+    # ======================================
+    # HACER PREGUNTAS UNA POR UNA
+    # ======================================
+
+    if not st.session_state.actividad_terminada:
+        actual = st.session_state.pregunta_actual
+
+        if actual < total:
+            pregunta, respuesta_correcta = preguntas[actual]
+
+            st.subheader(f"✏️ Pregunta {actual + 1} de {total}")
+            st.progress((actual + 1) / total)
+            st.write(f"**{pregunta}**")
+
+            clave = f"{nombre}_{actual}"
+
+            with st.form(key=f"formulario_{nombre}_{actual}"):
+                respuesta = st.text_area(
+                    "Escribe tu respuesta:",
+                    value=st.session_state.respuestas.get(clave, ""),
+                    placeholder="Escribe aquí con tus propias palabras...",
+                    height=120
+                )
+
+                enviar = st.form_submit_button(
+                    "Guardar respuesta y continuar ➜",
+                    use_container_width=True
+                )
+
+            if enviar:
+                if not respuesta.strip():
+                    st.warning("Por favor, escribe tu respuesta.")
+                else:
+                    st.session_state.respuestas[clave] = respuesta.strip()
+
+                    if actual + 1 < total:
+                        st.session_state.pregunta_actual += 1
+                    else:
+                        st.session_state.actividad_terminada = True
+
+                    st.rerun()
+
+    # ======================================
+    # RESULTADOS AL FINALIZAR
+    # ======================================
+
+    if st.session_state.actividad_terminada:
+        st.success("🎉 ¡Terminaste todas las preguntas!")
+
+        st.header("📝 Revisa tus respuestas")
+        st.write(
+            "Lee tus respuestas y compáralas con las respuestas "
+            "sugeridas para comprobar tu comprensión."
+        )
+
+        for i, (pregunta, sugerida) in enumerate(preguntas):
+            clave = f"{nombre}_{i}"
+
+            with st.container(border=True):
+                st.markdown(f"**Pregunta {i + 1}: {pregunta}**")
+                st.write("**Tu respuesta:**")
+                st.write(st.session_state.respuestas.get(clave, "Sin respuesta"))
+                st.write("**Respuesta sugerida:**")
+                st.write(sugerida)
+
+        st.balloons()
+        st.markdown("### 🌟 ¡Excelente trabajo! Sigue leyendo y aprendiendo.")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button(
+                "🔄 Resolver este cuento otra vez",
+                use_container_width=True
+            ):
+                reiniciar_actividad()
+                st.rerun()
+
+        with col2:
+            if st.button(
+                "📚 Elegir otro cuento",
+                use_container_width=True
+            ):
+                st.session_state.cuento_seleccionado = None
+                reiniciar_actividad()
+                st.rerun()
+
 st.divider()
-st.caption("LEO-IA | Aplicación educativa de comprensión lectora")
+st.caption("LEO-IA · Aplicación educativa de comprensión lectora")
