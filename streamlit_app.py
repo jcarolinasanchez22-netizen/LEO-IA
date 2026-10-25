@@ -4,9 +4,9 @@ import streamlit as st
 from google import genai
 from google.genai import types
 
-# ----------------------------------------
-# CONFIGURACIÓN DE LA PÁGINA
-# ----------------------------------------
+# ==========================================
+# CONFIGURACIÓN DE LA APLICACIÓN
+# ==========================================
 st.set_page_config(
     page_title="LEO-IA | Comprensión Lectora",
     page_icon="🦁",
@@ -16,22 +16,22 @@ st.set_page_config(
 st.title("🦁 LEO-IA")
 st.subheader("Tu compañero de comprensión lectora")
 st.write(
-    "Escribe una pregunta sobre una lectura o pega un texto "
-    "para que LEO-IA te ayude a comprenderlo."
+    "Escribe una pregunta o comparte una lectura "
+    "para recibir ayuda y comprender mejor los textos."
 )
 
-# ----------------------------------------
-# CONFIGURACIÓN DE GEMINI
-# ----------------------------------------
+# ==========================================
+# CONEXIÓN CON GEMINI
+# ==========================================
 try:
-    API_KEY = st.secrets["API_KEY"]
+    API_KEY = st.secrets.get("API_KEY", os.getenv("API_KEY"))
 except Exception:
     API_KEY = os.getenv("API_KEY")
 
 if not API_KEY:
     st.error(
-        "No se encontró la clave API. Configura API_KEY "
-        "en Streamlit Cloud → Settings → Secrets."
+        "No se encontró la clave API. Revisa "
+        "Settings → Secrets en Streamlit Cloud."
     )
     st.stop()
 
@@ -44,23 +44,24 @@ try:
     )
 except Exception as error:
     st.error("No se pudo iniciar la conexión con Gemini.")
-    st.code(str(error))
+    with st.expander("Ver detalles del error"):
+        st.code(str(error))
     st.stop()
 
-# ----------------------------------------
-# INTERFAZ PARA EL USUARIO
-# ----------------------------------------
+# ==========================================
+# INTERFAZ DEL ESTUDIANTE
+# ==========================================
 texto = st.text_area(
     "📖 Escribe tu lectura o pregunta:",
     height=200,
     placeholder=(
-        "Ejemplo: Lee este cuento y dime quiénes son "
-        "los personajes principales..."
+        "Ejemplo: ¿Qué es la comprensión lectora? "
+        "Explícamela con palabras sencillas."
     )
 )
 
 nivel = st.selectbox(
-    "🎓 ¿Para qué nivel educativo necesitas la explicación?",
+    "🎓 Selecciona el nivel educativo:",
     [
         "Educación básica elemental",
         "Educación básica media",
@@ -69,28 +70,28 @@ nivel = st.selectbox(
     ]
 )
 
-# ----------------------------------------
-# GENERACIÓN DE RESPUESTAS
-# ----------------------------------------
+# ==========================================
+# BOTÓN PARA CONSULTAR
+# ==========================================
 if st.button("✨ Consultar a LEO-IA", type="primary"):
     if not texto.strip():
-        st.warning("Por favor, escribe una lectura o una pregunta.")
+        st.warning("Primero escribe una pregunta o una lectura.")
     else:
         instruccion = f"""
-Eres LEO-IA, un asistente educativo especializado en comprensión lectora.
+Eres LEO-IA, un asistente educativo especializado
+en comprensión lectora.
 
-Tu objetivo es ayudar a estudiantes de: {nivel}.
+Nivel educativo del estudiante: {nivel}
 
-Responde en español, con lenguaje claro, amable y adecuado para la edad.
-Si el usuario comparte una lectura:
-1. Identifica la idea principal.
-2. Resume el texto cuando sea útil.
-3. Explica palabras difíciles de forma sencilla.
-4. Responde las preguntas basándote en el texto.
-5. Si el usuario lo solicita, crea preguntas de comprensión lectora
-   y proporciona sus respuestas.
-6. No inventes información que no aparezca en la lectura.
-7. Si falta información, explícalo con amabilidad.
+Instrucciones:
+- Responde siempre en español.
+- Utiliza un lenguaje claro, amable y adecuado para el nivel.
+- Explica las ideas paso a paso cuando sea necesario.
+- Si recibes una lectura, identifica su idea principal.
+- Responde las preguntas usando la información del texto.
+- No inventes información que no aparezca en la lectura.
+- Si te piden preguntas de comprensión, crea preguntas claras
+  y proporciona sus respuestas cuando te lo soliciten.
 
 Pregunta o lectura del estudiante:
 {texto}
@@ -98,40 +99,41 @@ Pregunta o lectura del estudiante:
 
         try:
             with st.spinner("🦁 LEO-IA está pensando..."):
-                respuesta = cliente.interactions.create(
+                respuesta = cliente.models.generate_content(
                     model=MODELO,
-                    input=instruccion
+                    contents=instruccion
                 )
 
-            resultado = getattr(respuesta, "output_text", None)
+            resultado = respuesta.text
 
             if resultado and resultado.strip():
-                st.success("¡LEO-IA tiene una respuesta!")
-                st.markdown("### 💡 Respuesta")
-                st.write(resultado)
+                st.success("¡LEO-IA ha respondido!")
+                st.markdown("### 💡 Respuesta de LEO-IA")
+                st.markdown(resultado)
             else:
                 st.warning(
-                    "Gemini respondió, pero no devolvió texto. "
+                    "Gemini no devolvió texto. "
                     "Intenta nuevamente."
                 )
-                with st.expander("Detalles técnicos"):
+                with st.expander("Ver detalles"):
                     st.write(respuesta)
 
         except Exception as error:
             st.error(
-                "No se pudo obtener una respuesta de Gemini. "
-                "Espera unos segundos e inténtalo otra vez."
+                "No se pudo obtener una respuesta de Gemini."
             )
-            st.info(
-                "La conexión tiene un tiempo máximo de espera de "
-                "30 segundos. Si el error continúa, revisa el modelo "
-                "configurado y los registros de la aplicación."
+            st.warning(
+                "Revisa los detalles del error que aparecen abajo. "
+                "Estos nos ayudarán a identificar el problema."
             )
-            with st.expander("Ver detalles del error"):
+            with st.expander("🔎 Ver detalles del error"):
                 st.code(str(error))
 
-# ----------------------------------------
+# ==========================================
 # PIE DE PÁGINA
-# ----------------------------------------
+# ==========================================
 st.divider()
-st.caption("🦁 LEO-IA | Aprender a leer, comprender y pensar.")
+st.caption(
+    "🦁 LEO-IA | Aprender a leer, comprender y pensar."
+)
+
