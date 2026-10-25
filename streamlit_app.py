@@ -6,23 +6,69 @@ from google import genai
 from google.genai import types
 
 # ==========================================
-# CONFIGURACIÓN DE LA APLICACIÓN
+# CONFIGURACIÓN
 # ==========================================
 st.set_page_config(
-    page_title="LEO-IA | Comprensión Lectora",
+    page_title="LEO-IA | El cuaderno perdido",
     page_icon="🦁",
     layout="centered"
 )
 
 st.title("🦁 LEO-IA")
-st.subheader("Tu compañero de comprensión lectora")
-st.write(
-    "Escribe una pregunta o comparte una lectura "
-    "para recibir ayuda y comprender mejor los textos."
-)
+st.subheader("Comprensión lectora")
+st.write("Lee el cuento y responde las preguntas con ayuda de LEO-IA.")
 
 # ==========================================
-# CONFIGURACIÓN DE GEMINI
+# LECTURA
+# ==========================================
+lectura = """
+EL CUADERNO PERDIDO
+
+Una mañana, Mateo caminaba hacia el colegio por un parque.
+Mientras caminaba, encontró un cuaderno azul que tenía dibujos
+y algunas notas en sus páginas.
+
+Mateo pensó que alguien debía haberlo perdido y quiso encontrar
+a su dueño. Por eso, decidió esperar en el parque para ver si
+alguien regresaba a buscarlo.
+
+Después de un rato, apareció una niña llamada Sofía. Ella estaba
+triste porque había perdido su cuaderno. Mateo le preguntó si
+el cuaderno azul era suyo y se lo mostró.
+
+Sofía se puso muy contenta al recuperarlo. Le explicó a Mateo
+que en el cuaderno tenía dibujos y notas que había preparado
+para su abuela.
+
+Sofía agradeció a Mateo por su honestidad y por ayudarla.
+Desde ese día, los dos se hicieron amigos.
+
+La historia nos enseña que debemos ser honestos, ayudar a los
+demás y devolver las cosas que no nos pertenecen.
+"""
+
+with st.expander("📖 Leer el cuento: El cuaderno perdido", expanded=True):
+    st.markdown(lectura)
+
+# ==========================================
+# PREGUNTAS PARA PRACTICAR
+# ==========================================
+st.markdown("### ✏️ Preguntas de comprensión")
+
+preguntas = [
+    "¿Quién es Mateo?",
+    "¿Qué encontró Mateo en el parque?",
+    "¿Por qué Sofía estaba triste?",
+    "¿Qué hizo Mateo para ayudar a Sofía?",
+    "¿Qué tenía Sofía en el cuaderno?",
+    "¿Qué enseñanza nos deja el cuento?"
+]
+
+for i, pregunta in enumerate(preguntas, start=1):
+    st.write(f"**{i}. {pregunta}**")
+
+# ==========================================
+# CONEXIÓN CON GEMINI
 # ==========================================
 try:
     API_KEY = st.secrets.get("API_KEY", os.getenv("API_KEY"))
@@ -45,78 +91,24 @@ try:
     )
 except Exception as error:
     st.error("No se pudo iniciar la conexión con Gemini.")
-    with st.expander("Ver detalles del error"):
+    with st.expander("Detalles del error"):
         st.code(str(error))
     st.stop()
 
-
 # ==========================================
-# FUNCIÓN PARA CONSULTAR CON REINTENTOS
+# PREGUNTA DEL ESTUDIANTE
 # ==========================================
-def consultar_gemini(instruccion, max_intentos=3):
-    ultimo_error = None
+st.divider()
+st.markdown("### 💬 Pregúntale a LEO-IA")
 
-    for intento in range(max_intentos):
-        try:
-            respuesta = cliente.models.generate_content(
-                model=MODELO,
-                contents=instruccion
-            )
-
-            resultado = respuesta.text
-
-            if resultado and resultado.strip():
-                return resultado
-
-            raise ValueError(
-                "Gemini respondió, pero no devolvió texto."
-            )
-
-        except Exception as error:
-            ultimo_error = error
-            mensaje_error = str(error).upper()
-
-            error_temporal = any(
-                codigo in mensaje_error
-                for codigo in [
-                    "503",
-                    "UNAVAILABLE",
-                    "429",
-                    "RESOURCE_EXHAUSTED",
-                    "500",
-                    "502",
-                    "504",
-                    "INTERNAL",
-                    "TIMEOUT"
-                ]
-            )
-
-            # No repetir si el error no parece temporal
-            if not error_temporal:
-                raise
-
-            # No esperar después del último intento
-            if intento < max_intentos - 1:
-                espera = 2 ** (intento + 1)
-                time.sleep(espera)
-
-    raise ultimo_error
-
-
-# ==========================================
-# INTERFAZ DEL ESTUDIANTE
-# ==========================================
-texto = st.text_area(
-    "📖 Escribe tu lectura o pregunta:",
-    height=200,
-    placeholder=(
-        "Ejemplo: ¿Qué es la comprensión lectora? "
-        "Explícamela con palabras sencillas."
-    )
+pregunta_usuario = st.text_area(
+    "Escribe tu pregunta sobre el cuento:",
+    placeholder="Ejemplo: ¿Qué encontró Mateo en el parque?",
+    height=100
 )
 
 nivel = st.selectbox(
-    "🎓 Selecciona el nivel educativo:",
+    "🎓 Selecciona tu nivel educativo:",
     [
         "Educación básica elemental",
         "Educación básica media",
@@ -126,82 +118,107 @@ nivel = st.selectbox(
 )
 
 # ==========================================
-# BOTÓN PARA CONSULTAR
+# CONSULTAR A LEO-IA
 # ==========================================
 if st.button("✨ Consultar a LEO-IA", type="primary"):
-    if not texto.strip():
-        st.warning("Primero escribe una pregunta o una lectura.")
+
+    if not pregunta_usuario.strip():
+        st.warning("Escribe una pregunta sobre el cuento.")
 
     else:
         instruccion = f"""
-Eres LEO-IA, un asistente educativo especializado
-en comprensión lectora.
+Eres LEO-IA, un tutor educativo de comprensión lectora.
 
-Nivel educativo del estudiante: {nivel}
+Debes responder las preguntas de los estudiantes utilizando
+EXCLUSIVAMENTE la lectura que aparece a continuación.
 
-Instrucciones:
-- Responde siempre en español.
-- Utiliza lenguaje claro, amable y apropiado para el nivel.
-- Explica las ideas paso a paso cuando sea necesario.
-- Si recibes una lectura, identifica su idea principal.
-- Responde usando la información proporcionada.
-- No inventes información que no aparezca en la lectura.
-- Si te solicitan preguntas de comprensión, crea preguntas
-  claras y responde basándote en el texto.
+LECTURA:
+{lectura}
 
-Pregunta o lectura del estudiante:
-{texto}
+REGLAS IMPORTANTES:
+1. Responde siempre en español.
+2. Usa palabras sencillas apropiadas para este nivel: {nivel}.
+3. Basa tus respuestas únicamente en la lectura.
+4. No inventes personajes, acontecimientos ni detalles.
+5. Si la respuesta no aparece en el cuento, explica amablemente
+   que la lectura no proporciona esa información.
+6. Si el estudiante pide un resumen, resume solo los hechos del cuento.
+7. Si pide la enseñanza, explica la honestidad, la ayuda a los demás
+   y la importancia de devolver lo que no nos pertenece.
+8. Ayuda al estudiante a comprender, no te limites a dar respuestas
+   cuando necesite una explicación.
+
+PREGUNTA DEL ESTUDIANTE:
+{pregunta_usuario}
 """
 
-        try:
-            with st.spinner(
-                "🦁 LEO-IA está intentando conectar con Gemini..."
-            ):
-                resultado = consultar_gemini(
-                    instruccion,
-                    max_intentos=3
+        resultado = None
+        ultimo_error = None
+
+        for intento in range(3):
+            try:
+                with st.spinner(
+                    f"🦁 LEO-IA está pensando... "
+                    f"(intento {intento + 1} de 3)"
+                ):
+                    respuesta = cliente.models.generate_content(
+                        model=MODELO,
+                        contents=instruccion
+                    )
+
+                resultado = respuesta.text
+
+                if resultado and resultado.strip():
+                    break
+
+                ultimo_error = Exception(
+                    "Gemini no devolvió una respuesta escrita."
                 )
 
-            st.success("¡LEO-IA ha respondido!")
-            st.markdown("### 💡 Respuesta de LEO-IA")
-            st.markdown(resultado)
+            except Exception as error:
+                ultimo_error = error
+                detalle = str(error).upper()
 
-        except Exception as error:
-            mensaje = str(error).upper()
-
-            if (
-                "503" in mensaje
-                or "UNAVAILABLE" in mensaje
-                or "429" in mensaje
-                or "RESOURCE_EXHAUSTED" in mensaje
-                or "500" in mensaje
-                or "502" in mensaje
-                or "504" in mensaje
-            ):
-                st.error(
-                    "Gemini sigue ocupado o no está disponible "
-                    "después de varios intentos."
-                )
-                st.info(
-                    "Espera unos minutos y vuelve a intentarlo. "
-                    "Los reintentos no pueden solucionar una "
-                    "interrupción del servicio."
-                )
-            else:
-                st.error("No se pudo obtener una respuesta de Gemini.")
-                st.info(
-                    "Consulta los detalles del error para identificar "
-                    "la causa."
+                temporal = any(
+                    codigo in detalle
+                    for codigo in [
+                        "503",
+                        "UNAVAILABLE",
+                        "429",
+                        "RESOURCE_EXHAUSTED",
+                        "500",
+                        "502",
+                        "504",
+                        "TIMEOUT"
+                    ]
                 )
 
-            with st.expander("🔎 Ver detalles del error"):
-                st.code(str(error))
+                if not temporal:
+                    break
 
+                if intento < 2:
+                    time.sleep(2 ** (intento + 1))
+
+        if resultado and resultado.strip():
+            st.success("¡LEO-IA tiene una respuesta!")
+            st.markdown("### 💡 Respuesta")
+            st.write(resultado)
+
+        else:
+            st.error(
+                "En este momento no se pudo generar la respuesta."
+            )
+            st.info(
+                "Puedes intentarlo nuevamente en unos minutos. "
+                "Si Gemini continúa ocupado, revisa el detalle del error."
+            )
+
+            if ultimo_error:
+                with st.expander("🔎 Ver detalles del error"):
+                    st.code(str(ultimo_error))
 
 # ==========================================
 # PIE DE PÁGINA
 # ==========================================
 st.divider()
-st.caption(
-    "🦁 LEO-IA | Aprender a leer, comprender y pensar."
-)
+st.caption("🦁 LEO-IA | Leer, comprender y aprender.")
