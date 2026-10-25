@@ -1,29 +1,28 @@
 
-import os
-import time
 import streamlit as st
-from google import genai
-from google.genai import types
+import unicodedata
+import re
 
 # ==========================================
 # CONFIGURACIÓN
 # ==========================================
 st.set_page_config(
-    page_title="LEO-IA | El cuaderno perdido",
+    page_title="LEO-IA | Comprensión lectora",
     page_icon="🦁",
     layout="centered"
 )
 
 st.title("🦁 LEO-IA")
-st.subheader("Comprensión lectora")
-st.write("Lee el cuento y responde las preguntas con ayuda de LEO-IA.")
+st.subheader("¡Aprendamos a comprender leyendo!")
+st.write(
+    "Lee la historia de Mateo y responde las preguntas. "
+    "LEO-IA te ayudará a comprobar lo que comprendiste."
+)
 
 # ==========================================
-# LECTURA
+# HISTORIA
 # ==========================================
 lectura = """
-EL CUADERNO PERDIDO
-
 Una mañana, Mateo caminaba hacia el colegio por un parque.
 Mientras caminaba, encontró un cuaderno azul que tenía dibujos
 y algunas notas en sus páginas.
@@ -47,178 +46,241 @@ La historia nos enseña que debemos ser honestos, ayudar a los
 demás y devolver las cosas que no nos pertenecen.
 """
 
-with st.expander("📖 Leer el cuento: El cuaderno perdido", expanded=True):
+with st.expander("📖 Leer la historia: El cuaderno perdido", expanded=True):
     st.markdown(lectura)
 
 # ==========================================
-# PREGUNTAS PARA PRACTICAR
+# BANCO DE PREGUNTAS Y RESPUESTAS
 # ==========================================
-st.markdown("### ✏️ Preguntas de comprensión")
-
-preguntas = [
-    "¿Quién es Mateo?",
-    "¿Qué encontró Mateo en el parque?",
-    "¿Por qué Sofía estaba triste?",
-    "¿Qué hizo Mateo para ayudar a Sofía?",
-    "¿Qué tenía Sofía en el cuaderno?",
-    "¿Qué enseñanza nos deja el cuento?"
-]
-
-for i, pregunta in enumerate(preguntas, start=1):
-    st.write(f"**{i}. {pregunta}**")
+preguntas = {
+    "¿Quién es el personaje principal de la historia?": {
+        "opciones": ["Mateo", "Sofía", "La abuela"],
+        "correcta": "Mateo",
+        "explicacion": "Mateo encuentra el cuaderno y ayuda a su dueña."
+    },
+    "¿Qué encontró Mateo en el parque?": {
+        "opciones": ["Una mochila roja", "Un cuaderno azul", "Un libro verde"],
+        "correcta": "Un cuaderno azul",
+        "explicacion": "El cuento dice que Mateo encontró un cuaderno azul con dibujos y notas."
+    },
+    "¿Por qué estaba triste Sofía?": {
+        "opciones": [
+            "Porque llegó tarde al colegio",
+            "Porque perdió su cuaderno",
+            "Porque discutió con Mateo"
+        ],
+        "correcta": "Porque perdió su cuaderno",
+        "explicacion": "Sofía estaba triste porque había perdido su cuaderno."
+    },
+    "¿Qué hizo Mateo para ayudar?": {
+        "opciones": [
+            "Se quedó esperando a su dueño",
+            "Se llevó el cuaderno a su casa",
+            "Escondió el cuaderno"
+        ],
+        "correcta": "Se quedó esperando a su dueño",
+        "explicacion": "Mateo esperó en el parque para encontrar a la persona que lo había perdido."
+    },
+    "¿Qué tenía Sofía en el cuaderno?": {
+        "opciones": [
+            "Dibujos y notas para su abuela",
+            "Juguetes y fotografías",
+            "Una lista de compras"
+        ],
+        "correcta": "Dibujos y notas para su abuela",
+        "explicacion": "Sofía había preparado dibujos y notas para su abuela."
+    },
+    "¿Qué ocurrió cuando Sofía recuperó el cuaderno?": {
+        "opciones": [
+            "Se puso muy contenta",
+            "Se fue sin decir nada",
+            "Regaló el cuaderno a Mateo"
+        ],
+        "correcta": "Se puso muy contenta",
+        "explicacion": "Sofía se alegró al recuperar su cuaderno y agradeció a Mateo."
+    },
+    "¿Qué enseñanza nos deja la historia?": {
+        "opciones": [
+            "Debemos quedarnos con lo que encontramos",
+            "Debemos ser honestos y ayudar a los demás",
+            "No debemos hablar con otras personas"
+        ],
+        "correcta": "Debemos ser honestos y ayudar a los demás",
+        "explicacion": "La historia enseña la importancia de la honestidad y de devolver lo ajeno."
+    }
+}
 
 # ==========================================
-# CONEXIÓN CON GEMINI
+# FUNCIONES
 # ==========================================
-try:
-    API_KEY = st.secrets.get("API_KEY", os.getenv("API_KEY"))
-except Exception:
-    API_KEY = os.getenv("API_KEY")
-
-if not API_KEY:
-    st.error(
-        "No se encontró la clave API. Revisa "
-        "Settings → Secrets en Streamlit Cloud."
+def normalizar(texto):
+    texto = texto.lower().strip()
+    texto = unicodedata.normalize("NFD", texto)
+    texto = "".join(
+        caracter for caracter in texto
+        if unicodedata.category(caracter) != "Mn"
     )
-    st.stop()
-
-MODELO = "gemini-3.8-flash"
-
-try:
-    cliente = genai.Client(
-        api_key=API_KEY,
-        http_options=types.HttpOptions(timeout=30000)
-    )
-except Exception as error:
-    st.error("No se pudo iniciar la conexión con Gemini.")
-    with st.expander("Detalles del error"):
-        st.code(str(error))
-    st.stop()
+    texto = re.sub(r"[^\w\s]", "", texto)
+    return texto
 
 # ==========================================
-# PREGUNTA DEL ESTUDIANTE
+# ACTIVIDAD INTERACTIVA
 # ==========================================
 st.divider()
-st.markdown("### 💬 Pregúntale a LEO-IA")
+st.header("✏️ Comprueba lo que comprendiste")
+st.write("Selecciona una respuesta para cada pregunta.")
 
-pregunta_usuario = st.text_area(
-    "Escribe tu pregunta sobre el cuento:",
-    placeholder="Ejemplo: ¿Qué encontró Mateo en el parque?",
-    height=100
-)
+respuestas_usuario = {}
 
-nivel = st.selectbox(
-    "🎓 Selecciona tu nivel educativo:",
-    [
-        "Educación básica elemental",
-        "Educación básica media",
-        "Educación básica superior",
-        "Bachillerato"
+for numero, (pregunta, datos) in enumerate(preguntas.items(), start=1):
+    st.markdown(f"**{numero}. {pregunta}**")
+    respuestas_usuario[pregunta] = st.radio(
+        "Elige tu respuesta:",
+        datos["opciones"],
+        index=None,
+        key=f"pregunta_{numero}",
+        label_visibility="collapsed"
+    )
+
+if st.button("✅ Revisar mis respuestas", type="primary"):
+    sin_responder = [
+        pregunta for pregunta, respuesta in respuestas_usuario.items()
+        if respuesta is None
     ]
+
+    if sin_responder:
+        st.warning(
+            f"Te faltan {len(sin_responder)} pregunta(s). "
+            "Responde todas antes de revisar."
+        )
+    else:
+        puntaje = 0
+        st.header("📋 Tus resultados")
+
+        for numero, (pregunta, datos) in enumerate(preguntas.items(), start=1):
+            respuesta = respuestas_usuario[pregunta]
+
+            if respuesta == datos["correcta"]:
+                puntaje += 1
+                st.success(f"{numero}. ¡Correcto! {datos['explicacion']}")
+            else:
+                st.error(
+                    f"{numero}. La respuesta correcta es: "
+                    f"{datos['correcta']}."
+                )
+                st.write(datos["explicacion"])
+
+        porcentaje = round(puntaje / len(preguntas) * 100)
+
+        st.divider()
+        st.subheader(f"🏆 Resultado: {puntaje} de {len(preguntas)}")
+        st.progress(porcentaje / 100)
+        st.write(f"Obtuviste el {porcentaje}% de respuestas correctas.")
+
+        if puntaje == len(preguntas):
+            st.balloons()
+            st.success("¡Excelente! Comprendiste muy bien la historia.")
+        elif puntaje >= 5:
+            st.info("¡Muy bien! Lee nuevamente la historia para mejorar.")
+        else:
+            st.info(
+                "¡Sigue practicando! Puedes volver a leer la historia "
+                "y responder otra vez."
+            )
+
+# ==========================================
+# CONSULTA SENCILLA SIN IA
+# ==========================================
+st.divider()
+st.header("💬 Pregúntale a LEO-IA")
+st.write(
+    "Escribe una pregunta sobre la historia. "
+    "LEO-IA buscará una respuesta preparada basada en el cuento."
 )
 
-# ==========================================
-# CONSULTAR A LEO-IA
-# ==========================================
-if st.button("✨ Consultar a LEO-IA", type="primary"):
+pregunta_libre = st.text_input(
+    "Tu pregunta:",
+    placeholder="Ejemplo: ¿Qué encontró Mateo?"
+)
 
-    if not pregunta_usuario.strip():
-        st.warning("Escribe una pregunta sobre el cuento.")
-
+if st.button("🔎 Buscar respuesta"):
+    if not pregunta_libre.strip():
+        st.warning("Primero escribe una pregunta.")
     else:
-        instruccion = f"""
-Eres LEO-IA, un tutor educativo de comprensión lectora.
+        consulta = normalizar(pregunta_libre)
 
-Debes responder las preguntas de los estudiantes utilizando
-EXCLUSIVAMENTE la lectura que aparece a continuación.
+        respuestas_conocidas = [
+            (
+                ["quien es mateo", "personaje principal", "protagonista"],
+                "Mateo es el personaje principal. Él encontró el cuaderno azul y ayudó a Sofía."
+            ),
+            (
+                ["que encontro mateo", "encontro en el parque", "que encontro"],
+                "Mateo encontró un cuaderno azul con dibujos y algunas notas."
+            ),
+            (
+                ["quien perdio el cuaderno", "de quien era el cuaderno", "quien era la duena"],
+                "El cuaderno pertenecía a Sofía."
+            ),
+            (
+                ["por que estaba triste sofia", "por que sofia estaba triste", "que le paso a sofia"],
+                "Sofía estaba triste porque había perdido su cuaderno."
+            ),
+            (
+                ["que hizo mateo", "como ayudo mateo", "como ayudo a sofia"],
+                "Mateo esperó para encontrar al dueño y le mostró el cuaderno a Sofía cuando ella apareció."
+            ),
+            (
+                ["que tenia el cuaderno", "que habia en el cuaderno", "que tenia sofia"],
+                "El cuaderno tenía dibujos y notas que Sofía había preparado para su abuela."
+            ),
+            (
+                ["que paso al final", "como termina", "final de la historia"],
+                "Sofía recuperó su cuaderno, agradeció a Mateo y los dos se hicieron amigos."
+            ),
+            (
+                ["ensenanza", "moraleja", "que aprendemos", "que nos ensena"],
+                "La historia nos enseña a ser honestos, ayudar a los demás y devolver las cosas que no nos pertenecen."
+            ),
+            (
+                ["donde encontro mateo", "en que lugar", "donde estaba mateo"],
+                "Mateo encontró el cuaderno mientras caminaba por un parque hacia el colegio."
+            ),
+            (
+                ["como se llamaba la nina", "nombre de la nina", "quien era sofia"],
+                "La niña se llamaba Sofía. Ella había perdido el cuaderno azul."
+            ),
+            (
+                ["para quien eran los dibujos", "para quien eran las notas", "abuela"],
+                "Los dibujos y las notas eran para la abuela de Sofía."
+            ),
+            (
+                ["por que debemos ser honestos", "que significa ser honesto"],
+                "En esta historia, ser honesto significa ayudar a devolver el cuaderno a su dueña en lugar de quedárselo."
+            )
+        ]
 
-LECTURA:
-{lectura}
+        respuesta_encontrada = None
 
-REGLAS IMPORTANTES:
-1. Responde siempre en español.
-2. Usa palabras sencillas apropiadas para este nivel: {nivel}.
-3. Basa tus respuestas únicamente en la lectura.
-4. No inventes personajes, acontecimientos ni detalles.
-5. Si la respuesta no aparece en el cuento, explica amablemente
-   que la lectura no proporciona esa información.
-6. Si el estudiante pide un resumen, resume solo los hechos del cuento.
-7. Si pide la enseñanza, explica la honestidad, la ayuda a los demás
-   y la importancia de devolver lo que no nos pertenece.
-8. Ayuda al estudiante a comprender, no te limites a dar respuestas
-   cuando necesite una explicación.
+        for palabras_clave, respuesta in respuestas_conocidas:
+            if any(normalizar(clave) in consulta for clave in palabras_clave):
+                respuesta_encontrada = respuesta
+                break
 
-PREGUNTA DEL ESTUDIANTE:
-{pregunta_usuario}
-"""
-
-        resultado = None
-        ultimo_error = None
-
-        for intento in range(3):
-            try:
-                with st.spinner(
-                    f"🦁 LEO-IA está pensando... "
-                    f"(intento {intento + 1} de 3)"
-                ):
-                    respuesta = cliente.models.generate_content(
-                        model=MODELO,
-                        contents=instruccion
-                    )
-
-                resultado = respuesta.text
-
-                if resultado and resultado.strip():
-                    break
-
-                ultimo_error = Exception(
-                    "Gemini no devolvió una respuesta escrita."
-                )
-
-            except Exception as error:
-                ultimo_error = error
-                detalle = str(error).upper()
-
-                temporal = any(
-                    codigo in detalle
-                    for codigo in [
-                        "503",
-                        "UNAVAILABLE",
-                        "429",
-                        "RESOURCE_EXHAUSTED",
-                        "500",
-                        "502",
-                        "504",
-                        "TIMEOUT"
-                    ]
-                )
-
-                if not temporal:
-                    break
-
-                if intento < 2:
-                    time.sleep(2 ** (intento + 1))
-
-        if resultado and resultado.strip():
-            st.success("¡LEO-IA tiene una respuesta!")
-            st.markdown("### 💡 Respuesta")
-            st.write(resultado)
-
+        if respuesta_encontrada:
+            st.success("🦁 LEO-IA responde:")
+            st.write(respuesta_encontrada)
         else:
-            st.error(
-                "En este momento no se pudo generar la respuesta."
-            )
             st.info(
-                "Puedes intentarlo nuevamente en unos minutos. "
-                "Si Gemini continúa ocupado, revisa el detalle del error."
+                "No tengo una respuesta preparada para esa pregunta. "
+                "Prueba preguntando qué encontró Mateo, por qué estaba "
+                "triste Sofía o cuál es la enseñanza de la historia."
             )
-
-            if ultimo_error:
-                with st.expander("🔎 Ver detalles del error"):
-                    st.code(str(ultimo_error))
 
 # ==========================================
 # PIE DE PÁGINA
 # ==========================================
 st.divider()
 st.caption("🦁 LEO-IA | Leer, comprender y aprender.")
+st.caption("Versión educativa sin conexión a servicios de inteligencia artificial.")
+
