@@ -1,5 +1,6 @@
 
 import os
+import time
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -21,7 +22,7 @@ st.write(
 )
 
 # ==========================================
-# CONEXIÓN CON GEMINI
+# CONFIGURACIÓN DE GEMINI
 # ==========================================
 try:
     API_KEY = st.secrets.get("API_KEY", os.getenv("API_KEY"))
@@ -47,6 +48,60 @@ except Exception as error:
     with st.expander("Ver detalles del error"):
         st.code(str(error))
     st.stop()
+
+
+# ==========================================
+# FUNCIÓN PARA CONSULTAR CON REINTENTOS
+# ==========================================
+def consultar_gemini(instruccion, max_intentos=3):
+    ultimo_error = None
+
+    for intento in range(max_intentos):
+        try:
+            respuesta = cliente.models.generate_content(
+                model=MODELO,
+                contents=instruccion
+            )
+
+            resultado = respuesta.text
+
+            if resultado and resultado.strip():
+                return resultado
+
+            raise ValueError(
+                "Gemini respondió, pero no devolvió texto."
+            )
+
+        except Exception as error:
+            ultimo_error = error
+            mensaje_error = str(error).upper()
+
+            error_temporal = any(
+                codigo in mensaje_error
+                for codigo in [
+                    "503",
+                    "UNAVAILABLE",
+                    "429",
+                    "RESOURCE_EXHAUSTED",
+                    "500",
+                    "502",
+                    "504",
+                    "INTERNAL",
+                    "TIMEOUT"
+                ]
+            )
+
+            # No repetir si el error no parece temporal
+            if not error_temporal:
+                raise
+
+            # No esperar después del último intento
+            if intento < max_intentos - 1:
+                espera = 2 ** (intento + 1)
+                time.sleep(espera)
+
+    raise ultimo_error
+
 
 # ==========================================
 # INTERFAZ DEL ESTUDIANTE
@@ -76,6 +131,7 @@ nivel = st.selectbox(
 if st.button("✨ Consultar a LEO-IA", type="primary"):
     if not texto.strip():
         st.warning("Primero escribe una pregunta o una lectura.")
+
     else:
         instruccion = f"""
 Eres LEO-IA, un asistente educativo especializado
@@ -85,49 +141,62 @@ Nivel educativo del estudiante: {nivel}
 
 Instrucciones:
 - Responde siempre en español.
-- Utiliza un lenguaje claro, amable y adecuado para el nivel.
+- Utiliza lenguaje claro, amable y apropiado para el nivel.
 - Explica las ideas paso a paso cuando sea necesario.
 - Si recibes una lectura, identifica su idea principal.
-- Responde las preguntas usando la información del texto.
+- Responde usando la información proporcionada.
 - No inventes información que no aparezca en la lectura.
-- Si te piden preguntas de comprensión, crea preguntas claras
-  y proporciona sus respuestas cuando te lo soliciten.
+- Si te solicitan preguntas de comprensión, crea preguntas
+  claras y responde basándote en el texto.
 
 Pregunta o lectura del estudiante:
 {texto}
 """
 
         try:
-            with st.spinner("🦁 LEO-IA está pensando..."):
-                respuesta = cliente.models.generate_content(
-                    model=MODELO,
-                    contents=instruccion
+            with st.spinner(
+                "🦁 LEO-IA está intentando conectar con Gemini..."
+            ):
+                resultado = consultar_gemini(
+                    instruccion,
+                    max_intentos=3
                 )
 
-            resultado = respuesta.text
-
-            if resultado and resultado.strip():
-                st.success("¡LEO-IA ha respondido!")
-                st.markdown("### 💡 Respuesta de LEO-IA")
-                st.markdown(resultado)
-            else:
-                st.warning(
-                    "Gemini no devolvió texto. "
-                    "Intenta nuevamente."
-                )
-                with st.expander("Ver detalles"):
-                    st.write(respuesta)
+            st.success("¡LEO-IA ha respondido!")
+            st.markdown("### 💡 Respuesta de LEO-IA")
+            st.markdown(resultado)
 
         except Exception as error:
-            st.error(
-                "No se pudo obtener una respuesta de Gemini."
-            )
-            st.warning(
-                "Revisa los detalles del error que aparecen abajo. "
-                "Estos nos ayudarán a identificar el problema."
-            )
+            mensaje = str(error).upper()
+
+            if (
+                "503" in mensaje
+                or "UNAVAILABLE" in mensaje
+                or "429" in mensaje
+                or "RESOURCE_EXHAUSTED" in mensaje
+                or "500" in mensaje
+                or "502" in mensaje
+                or "504" in mensaje
+            ):
+                st.error(
+                    "Gemini sigue ocupado o no está disponible "
+                    "después de varios intentos."
+                )
+                st.info(
+                    "Espera unos minutos y vuelve a intentarlo. "
+                    "Los reintentos no pueden solucionar una "
+                    "interrupción del servicio."
+                )
+            else:
+                st.error("No se pudo obtener una respuesta de Gemini.")
+                st.info(
+                    "Consulta los detalles del error para identificar "
+                    "la causa."
+                )
+
             with st.expander("🔎 Ver detalles del error"):
                 st.code(str(error))
+
 
 # ==========================================
 # PIE DE PÁGINA
@@ -136,4 +205,3 @@ st.divider()
 st.caption(
     "🦁 LEO-IA | Aprender a leer, comprender y pensar."
 )
-
