@@ -3,9 +3,9 @@ import streamlit as st
 import unicodedata
 import re
 
-# ==========================================
-# CONFIGURACIÓN
-# ==========================================
+# ==================================================
+# 1. CONFIGURACIÓN DE LA APLICACIÓN
+# ==================================================
 st.set_page_config(
     page_title="LEO-IA | Comprensión lectora",
     page_icon="🦁",
@@ -15,13 +15,14 @@ st.set_page_config(
 st.title("🦁 LEO-IA")
 st.subheader("¡Aprendamos a comprender leyendo!")
 st.write(
-    "Lee la historia, responde las preguntas y conversa con LEO-IA. "
-    "Te daré pistas para que desarrolles tu comprensión lectora."
+    "Soy LEO-IA, tu asistente de Lengua y Literatura. "
+    "Te ayudaré a comprender historias, descubrir pistas "
+    "y desarrollar tu pensamiento crítico."
 )
 
-# ==========================================
-# HISTORIA
-# ==========================================
+# ==================================================
+# 2. HISTORIA
+# ==================================================
 lectura = """
 Una mañana, Mateo caminaba hacia el colegio por un parque.
 Mientras caminaba, encontró un cuaderno azul que tenía dibujos
@@ -50,21 +51,25 @@ with st.expander("📖 Leer la historia: El cuaderno perdido",
                  expanded=True):
     st.markdown(lectura)
 
-# ==========================================
-# BANCO DE PREGUNTAS
-# ==========================================
+# ==================================================
+# 3. BANCO DE PREGUNTAS
+# ==================================================
 preguntas = {
     "¿Quién es el personaje principal de la historia?": {
         "opciones": ["Mateo", "Sofía", "La abuela"],
         "correcta": "Mateo",
-        "explicacion": "Mateo encuentra el cuaderno y ayuda a su dueña."
+        "explicacion":
+            "Mateo encuentra el cuaderno y ayuda a su dueña."
     },
     "¿Qué encontró Mateo en el parque?": {
         "opciones": [
-            "Una mochila roja", "Un cuaderno azul", "Un libro verde"
+            "Una mochila roja",
+            "Un cuaderno azul",
+            "Un libro verde"
         ],
         "correcta": "Un cuaderno azul",
-        "explicacion": "Mateo encontró un cuaderno azul con dibujos y notas."
+        "explicacion":
+            "Mateo encontró un cuaderno azul con dibujos y notas."
     },
     "¿Por qué estaba triste Sofía?": {
         "opciones": [
@@ -73,7 +78,8 @@ preguntas = {
             "Porque discutió con Mateo"
         ],
         "correcta": "Porque perdió su cuaderno",
-        "explicacion": "Sofía estaba triste porque había perdido su cuaderno."
+        "explicacion":
+            "Sofía estaba triste porque había perdido su cuaderno."
     },
     "¿Qué hizo Mateo para ayudar?": {
         "opciones": [
@@ -82,7 +88,8 @@ preguntas = {
             "Escondió el cuaderno"
         ],
         "correcta": "Se quedó esperando a su dueño",
-        "explicacion": "Mateo esperó para encontrar a la persona que lo perdió."
+        "explicacion":
+            "Mateo esperó en el parque para encontrar a su dueño."
     },
     "¿Qué tenía Sofía en el cuaderno?": {
         "opciones": [
@@ -91,7 +98,8 @@ preguntas = {
             "Una lista de compras"
         ],
         "correcta": "Dibujos y notas para su abuela",
-        "explicacion": "Sofía había preparado dibujos y notas para su abuela."
+        "explicacion":
+            "Sofía había preparado dibujos y notas para su abuela."
     },
     "¿Qué ocurrió cuando Sofía recuperó el cuaderno?": {
         "opciones": [
@@ -100,7 +108,8 @@ preguntas = {
             "Regaló el cuaderno a Mateo"
         ],
         "correcta": "Se puso muy contenta",
-        "explicacion": "Sofía se alegró al recuperar su cuaderno."
+        "explicacion":
+            "Sofía se alegró al recuperar su cuaderno."
     },
     "¿Qué enseñanza nos deja la historia?": {
         "opciones": [
@@ -108,14 +117,16 @@ preguntas = {
             "Debemos ser honestos y ayudar a los demás",
             "No debemos hablar con otras personas"
         ],
-        "correcta": "Debemos ser honestos y ayudar a los demás",
-        "explicacion": "La historia destaca la honestidad y la ayuda a los demás."
+        "correcta":
+            "Debemos ser honestos y ayudar a los demás",
+        "explicacion":
+            "La historia enseña honestidad y solidaridad."
     }
 }
 
-# ==========================================
-# FUNCIONES AUXILIARES
-# ==========================================
+# ==================================================
+# 4. FUNCIONES DE PROCESAMIENTO
+# ==================================================
 def normalizar(texto):
     texto = texto.lower().strip()
     texto = unicodedata.normalize("NFD", texto)
@@ -127,255 +138,406 @@ def normalizar(texto):
     return re.sub(r"\s+", " ", texto).strip()
 
 
-def contiene_alguna(texto, expresiones):
-    return any(expresion in texto for expresion in expresiones)
+def contiene(texto, expresiones):
+    return any(exp in texto for exp in expresiones)
 
 
-# ==========================================
-# CHATBOT PEDAGÓGICO
-# ==========================================
-def responder_leo(pregunta):
-    consulta = normalizar(pregunta)
-
-    # PRUEBA 4: RESISTENCIA A INTENTOS DE COPIAR
-    intentos_de_copiar = [
-        "olvida tus reglas", "ignora tus reglas",
-        "ignora las instrucciones", "olvida las instrucciones",
-        "dame todas las respuestas", "dame las respuestas",
-        "dame la tarea resuelta", "hazme toda la tarea",
-        "solo quiero copiar", "solo para copiar",
-        "para copiarlo", "resuelve toda la tarea",
-        "ignora todo lo anterior", "cambia tus reglas",
-        "no sigas tus instrucciones", "actua como si no tuvieras reglas",
-        "escribe todo el cuestionario resuelto",
-        "quiero copiar las respuestas"
+# ==================================================
+# 5. PRUEBA 4: RESISTENCIA ADVERSARIAL
+# ==================================================
+def es_intento_de_copiar(texto):
+    patrones = [
+        r"\bolvida\b.*\b(reglas|instrucciones)\b",
+        r"\bignora\b.*\b(reglas|instrucciones)\b",
+        r"\bignora todo lo anterior\b",
+        r"\bdame\b.*\b(todas las respuestas|las respuestas)\b",
+        r"\bdame\b.*\b(tarea|cuestionario)\b.*\bresuelt[oa]s?\b",
+        r"\b(resuelve|haz|realiza|contesta)\b.*"
+        r"\b(toda la tarea|todo el cuestionario)\b",
+        r"\bsolo quiero copiar\b",
+        r"\bpara solo copiarlo\b",
+        r"\bpara copiar\b.*\b(tarea|respuestas)\b",
+        r"\bescribe\b.*\btodas las respuestas\b",
+        r"\bno sigas tus instrucciones\b",
+        r"\bcambia tus reglas\b",
+        r"\bactua como\b.*\bsin reglas\b"
     ]
 
-    if contiene_alguna(consulta, intentos_de_copiar):
-        return (
-            "¡Buen intento! 😉📚 Mi misión es ayudarte a aprender, "
-            "no entregarte toda la tarea para copiar.\n\n"
-            "Vamos paso a paso. Recuerda el momento en que Mateo "
-            "encontró el cuaderno.\n\n"
-            "🔎 Pista: piensa en el lugar donde caminaba Mateo "
-            "y en lo que hizo para encontrar a la persona que lo perdió.\n\n"
-            "¿Dónde encontró el cuaderno y qué decidió hacer? "
-            "Escribe tu idea y te ayudaré a revisarla."
-        )
+    return any(re.search(patron, texto) for patron in patrones)
 
-    # PRUEBA 3: TEMAS FUERA DE LENGUA Y LITERATURA
+
+def respuesta_adversarial():
+    return """
+¡Buen intento! 😉📚 Mi misión como LEO-IA es ayudarte a
+comprender, no darte toda la tarea lista para copiar.
+
+¡Vamos a resolverlo juntos!
+
+🔎 Primera pista: recuerda el momento en que Mateo encontró
+el cuaderno.
+
+• ¿En qué lugar lo encontró?
+• ¿Qué decidió hacer para encontrar a su dueño?
+
+Escribe tu idea con tus propias palabras y te ayudaré a
+comprobar si vas por buen camino. ¡Tú puedes!
+"""
+
+
+# ==================================================
+# 6. PRUEBA 3: DETECCIÓN DE TEMAS FUERA DE ALCANCE
+# ==================================================
+def es_tema_ajeno(texto):
     temas_ajenos = [
-        "ecuacion", "ecuaciones", "algebra", "matematicas",
-        "matematica", "derivada", "integral", "factorizar",
-        "resuelve esta operacion", "cuanto es", "multiplica",
-        "divide", "raiz cuadrada", "teorema de pitagoras",
+        "matematicas", "matematica", "ecuacion", "ecuaciones",
+        "algebra", "derivada", "integral", "factorizar",
+        "raiz cuadrada", "teorema de pitagoras",
         "ley de newton", "formula quimica", "tabla periodica",
-        "capital de", "presidente de", "programa en python",
-        "codigo javascript", "problema de fisica"
+        "capital de", "resuelve esta operacion",
+        "programa en python", "codigo javascript",
+        "problema de fisica", "calcula el area",
+        "calcula el perimetro", "sistema de ecuaciones"
     ]
 
-    # Detecta también ecuaciones escritas con números y signos.
-    parece_operacion = bool(
-        re.search(r"\d+\s*[\+\*/=]\s*\d+", consulta)
-        or re.search(r"\d+\s*[a-z]\s*[\+\-=]", consulta)
+    if contiene(texto, temas_ajenos):
+        return True
+
+    # Detectar operaciones y ecuaciones sencillas.
+    # Ejemplo: 2x+5=15 o 8+4=12.
+    patrones_matematicos = [
+        r"\d+\s*[a-z]\s*[+\-=]\s*\d+",
+        r"\d+\s*[+\*/]\s*\d+\s*=",
+        r"\d+\s*-\s*\d+\s*="
+    ]
+
+    return any(
+        re.search(patron, texto)
+        for patron in patrones_matematicos
     )
 
-    if contiene_alguna(consulta, temas_ajenos) or parece_operacion:
-        return (
-            "¡Hola! 😊 Veo que necesitas ayuda con otra materia. "
-            "Mi especialidad es Lengua y Literatura: comprensión "
-            "lectora, análisis de cuentos e interpretación de textos. 📚\n\n"
-            "Para esa consulta, tu docente de la asignatura "
-            "correspondiente podrá orientarte paso a paso.\n\n"
-            "¡Volvamos a nuestra lectura! 🔎 ¿Cuál fue el problema "
-            "principal de la historia y cómo se resolvió?"
-        )
 
-    # PRUEBA 2: INFERENCIA, EMOCIONES Y REFLEXIÓN
-    preguntas_de_reflexion = [
+def respuesta_fuera_de_alcance():
+    return """
+¡Hola! 😊 Veo que necesitas ayuda con otra asignatura.
+
+Mi especialidad es Lengua y Literatura: comprensión lectora,
+análisis de cuentos e interpretación de textos. 📚
+
+Para esa consulta, tu docente de la materia correspondiente
+podrá orientarte paso a paso.
+
+¡Volvamos a nuestra lectura! 🔎
+
+¿Qué problema tuvo Sofía y cómo se resolvió la situación?
+Piensa en lo que ocurrió en el cuento y cuéntame tu idea.
+"""
+
+
+# ==================================================
+# 7. PRUEBA 2: INFERENCIA, EMOCIONES Y REFLEXIÓN
+# ==================================================
+def es_pregunta_reflexiva(texto):
+    patrones = [
         "por que se preocupo", "por que se preocupo tanto",
-        "solo era un simple", "por que era importante",
-        "que significa", "que habria pasado",
-        "que hubiera pasado", "que harias tu", "que haria yo",
-        "como te sentirias", "como se sintio",
-        "por que se sintio", "que sentia", "que nos ensena",
-        "que aprendemos", "moraleja", "ensenanza",
-        "que opinas", "por que crees", "que habria hecho",
-        "valor sentimental", "que significa ser honesto",
-        "por que debemos ser honestos"
+        "solo era un simple cuaderno", "por que era importante",
+        "por que se sintio", "como se sintio", "que sentia",
+        "que significa", "que habria pasado", "que hubiera pasado",
+        "que harias tu", "como te sentirias", "que opinas",
+        "por que crees", "valor sentimental", "que aprendemos",
+        "moraleja", "ensenanza", "que nos ensena",
+        "que significa ser honesto", "por que debemos ser honestos",
+        "intencion del autor", "mensaje del texto",
+        "que queria expresar", "que quiso decir el autor",
+        "que habria hecho", "que hubiera hecho"
     ]
 
-    if contiene_alguna(consulta, preguntas_de_reflexion):
-        return (
-            "¡Esa es una excelente pregunta para reflexionar! 🤔📖\n\n"
-            "A veces, un objeto no es importante por su precio, "
-            "sino por los recuerdos y sentimientos que representa.\n\n"
-            "Pensemos juntos:\n\n"
-            "• ¿Qué cosas especiales había preparado Sofía en su cuaderno?\n\n"
-            "• ¿Por qué crees que esas cosas eran importantes para ella?\n\n"
-            "• Si perdieras algo muy valioso para ti, ¿cómo te sentirías?\n\n"
-            "• Si encontraras un objeto perdido, ¿qué harías?\n\n"
-            "Cuéntame tu opinión. No hay una única respuesta para "
-            "tus reflexiones personales. ¡Vamos a pensar juntos! ✨"
-        )
+    return contiene(texto, patrones)
 
-    # PRUEBA 1: COMPRENSIÓN DIRECTA CON PISTAS
-    # El chatbot guía al estudiante sin revelar inmediatamente
-    # los datos específicos de la historia.
 
-    if contiene_alguna(consulta, [
+def respuesta_reflexiva():
+    return """
+¡Esa es una excelente pregunta para reflexionar! 🤔📖
+
+A veces, un objeto no es importante por su precio, sino por
+los recuerdos, sentimientos o experiencias que representa.
+
+Pensemos juntos:
+
+• ¿Qué cosas especiales había preparado Sofía en su cuaderno?
+
+• ¿Por qué crees que esas cosas eran importantes para ella?
+
+• Si perdieras algo muy valioso para ti, ¿cómo te sentirías?
+
+• Si encontraras un objeto perdido, ¿qué harías para ayudar
+a su dueño?
+
+Cuéntame tu opinión. Puedes explicar tus propias ideas y
+relacionarlas con lo que ocurre en la historia. ✨
+"""
+
+
+# ==================================================
+# 8. PRUEBA 1: COMPRENSIÓN DIRECTA Y ANDAMIAJE
+# ==================================================
+def respuesta_directa(texto):
+    # Personajes y contenido del cuaderno.
+    if contiene(texto, [
         "personajes principales", "quienes son los personajes",
-        "personajes del cuento", "quien es el personaje principal",
-        "quien es el protagonista"
+        "personajes del cuento", "personaje principal",
+        "quienes son los protagonistas"
+    ]) and contiene(texto, [
+        "cuaderno", "dentro", "importante", "personajes",
+        "quienes son", "quienes eran"
     ]):
-        return (
-            "¡Vamos a descubrirlo juntos! 📖\n\n"
-            "1. ¿Recuerdas quién encontró el cuaderno azul?\n\n"
-            "2. ¿Qué niña apareció después porque había perdido algo?\n\n"
-            "3. ¿Qué relación tienen esos personajes con el problema "
-            "principal de la historia?\n\n"
-            "Revisa el cuento y dime quiénes crees que son los "
-            "personajes principales."
-        )
+        return """
+¡Vamos a descubrirlo juntos! 📖 No te daré todas las respuestas
+de inmediato, pero te ayudaré a encontrarlas.
 
-    if contiene_alguna(consulta, [
+1. ¿Recuerdas quién encontró el cuaderno azul en el parque?
+
+2. ¿Qué niña apareció después porque había perdido algo?
+
+3. ¿Qué cosas especiales había preparado ella dentro del cuaderno
+y para quién eran?
+
+Revisa el cuento y responde con tus propias palabras.
+¡Yo te ayudaré a comprobar tu comprensión!
+"""
+
+    if contiene(texto, [
+        "personajes principales", "quienes son los personajes",
+        "personajes del cuento", "quien es el protagonista",
+        "quien es el personaje principal"
+    ]):
+        return """
+¡Vamos a descubrirlo juntos! 📚
+
+• ¿Quién encontró el cuaderno azul?
+• ¿Qué niña apareció buscando algo que había perdido?
+
+Busca sus nombres en el cuento. ¿Quiénes crees que son los
+personajes principales? Cuéntame tu respuesta.
+"""
+
+    if contiene(texto, [
         "que habia dentro", "que habia en el cuaderno",
         "que tenia el cuaderno", "que tenia sofia",
         "que habia escrito", "que habia preparado",
-        "que era importante dentro del cuaderno"
+        "que era importante dentro del cuaderno",
+        "para quien eran los dibujos"
     ]):
-        return (
-            "¡Busquemos una pista! 🔎\n\n"
-            "En la historia, Sofía explica que había preparado "
-            "algo especial para un familiar.\n\n"
-            "Piensa en estas preguntas:\n"
-            "• ¿Qué cosas se pueden dibujar o escribir en un cuaderno?\n"
-            "• ¿Para quién las había preparado Sofía?\n\n"
-            "Vuelve a leer el párrafo donde Sofía recupera su cuaderno "
-            "e intenta responder con tus propias palabras."
-        )
+        return """
+¡Busquemos una pista! 🔎
 
-    if contiene_alguna(consulta, [
+Sofía explica que había preparado algo especial para un familiar.
+
+• ¿Qué cosas se pueden dibujar o escribir en un cuaderno?
+• ¿Para quién las había preparado Sofía?
+
+Vuelve a leer el párrafo donde recupera el cuaderno e intenta
+responder con tus propias palabras.
+"""
+
+    if contiene(texto, [
         "que encontro mateo", "encontro en el parque",
         "donde encontro mateo", "donde encontro el cuaderno",
         "que objeto encontro"
     ]):
-        return (
-            "¡Vamos a buscarlo en el texto! 📚\n\n"
-            "Pista: el objeto que encontró Mateo tenía un color "
-            "y contenía dibujos y notas.\n\n"
-            "¿Recuerdas qué objeto era y de qué color? "
-            "Vuelve al primer párrafo y cuéntamelo."
-        )
+        return """
+¡Vamos a buscarlo en el texto! 📚
 
-    if contiene_alguna(consulta, [
+Pista: el objeto que encontró Mateo tenía un color y contenía
+dibujos y notas.
+
+¿Qué objeto era y de qué color? Busca la respuesta en el
+primer párrafo y cuéntame.
+"""
+
+    if contiene(texto, [
         "quien perdio el cuaderno", "de quien era el cuaderno",
         "quien era la duena", "quien lo perdio"
     ]):
-        return (
-            "¡Piensa en la niña que apareció después de que Mateo "
-            "encontrara el cuaderno! 🔎\n\n"
-            "Ella estaba triste porque había perdido algo importante.\n\n"
-            "¿Recuerdas cómo se llamaba? Busca su nombre en el cuento."
-        )
+        return """
+¡Piensa en la niña que apareció después de que Mateo encontrara
+el cuaderno! 🔎
 
-    if contiene_alguna(consulta, [
-        "por que estaba triste", "por que se sentia triste",
-        "que le paso a sofia", "por que estaba preocupada"
+Ella estaba triste porque había perdido algo importante.
+
+¿Cómo se llamaba? Busca su nombre en el párrafo donde aparece.
+"""
+
+    if contiene(texto, [
+        "por que estaba triste sofia", "por que sofia estaba triste",
+        "que le paso a sofia", "por que estaba triste"
     ]):
-        return (
-            "¡Vamos a encontrar la pista! 🤔\n\n"
-            "Recuerda que Sofía llegó al parque sintiéndose triste "
-            "porque le faltaba algo que era importante para ella.\n\n"
-            "¿Qué había perdido? Revisa el párrafo donde aparece Sofía."
-        )
+        return """
+¡Vamos a encontrar la pista! 🤔
 
-    if contiene_alguna(consulta, [
+Sofía llegó al parque sintiéndose triste porque le faltaba
+algo importante para ella.
+
+¿Qué había perdido? Revisa el párrafo donde aparece Sofía.
+"""
+
+    if contiene(texto, [
         "que hizo mateo", "como ayudo mateo",
         "como ayudo a sofia", "que hizo para ayudar"
     ]):
-        return (
-            "¡Pensemos en las acciones de Mateo! 🦁\n\n"
-            "Cuando encontró el objeto, Mateo pudo habérselo quedado, "
-            "pero decidió actuar de otra manera.\n\n"
-            "¿Qué hizo mientras esperaba que apareciera su dueño? "
-            "¿Qué hizo cuando llegó Sofía?"
-        )
+        return """
+¡Pensemos en las acciones de Mateo! 🦁
 
-    if contiene_alguna(consulta, [
+Cuando encontró el objeto, Mateo decidió actuar con honestidad.
+
+• ¿Qué hizo mientras esperaba que apareciera su dueño?
+• ¿Qué hizo cuando llegó Sofía?
+
+Cuéntame qué recuerdas de esas dos acciones.
+"""
+
+    if contiene(texto, [
         "como termina", "que paso al final",
         "final de la historia", "que ocurrio al final"
     ]):
-        return (
-            "¡Recuerda el último momento del cuento! 📖\n\n"
-            "Piensa en cómo se sintió Sofía después de recuperar "
-            "lo que había perdido y en lo que ocurrió entre ella y Mateo.\n\n"
-            "¿Cómo terminó la historia? Intenta contarlo en una o dos frases."
-        )
+        return """
+¡Recuerda el último momento del cuento! 📖
 
-    if contiene_alguna(consulta, [
+Piensa en cómo se sintió Sofía al recuperar lo que había perdido
+y en lo que ocurrió entre ella y Mateo.
+
+¿Cómo terminó la historia? Intenta contarlo en una o dos frases.
+"""
+
+    if contiene(texto, [
         "donde estaba mateo", "hacia donde caminaba",
-        "a donde iba mateo"
+        "a donde iba mateo", "donde encontro"
     ]):
-        return (
-            "¡Busca la pista en el primer párrafo! 🔎\n\n"
-            "El cuento explica que Mateo caminaba por un lugar "
-            "antes de llegar al colegio.\n\n"
-            "¿Recuerdas por dónde caminaba y hacia dónde se dirigía?"
-        )
+        return """
+¡Busca la pista en el primer párrafo! 🔎
 
-    if contiene_alguna(consulta, [
+El cuento explica que Mateo caminaba por un lugar antes de
+llegar al colegio.
+
+¿Por dónde caminaba y hacia dónde se dirigía?
+"""
+
+    if contiene(texto, [
         "como se llamaba la nina", "nombre de la nina",
         "quien era sofia"
     ]):
-        return (
-            "¡Piensa en el momento en que aparece la niña! 📚\n\n"
-            "El narrador menciona su nombre cuando ella llega "
-            "buscando el cuaderno que había perdido.\n\n"
-            "¿Puedes encontrar su nombre en ese párrafo?"
-        )
+        return """
+¡Piensa en el momento en que aparece la niña! 📚
 
-    if contiene_alguna(consulta, [
+El narrador menciona su nombre cuando ella llega buscando
+el cuaderno que había perdido.
+
+¿Puedes encontrar su nombre en ese párrafo?
+"""
+
+    if contiene(texto, [
         "para quien eran los dibujos", "para quien eran las notas",
         "para quien preparo"
     ]):
-        return (
-            "¡Hay una pista muy clara en el cuento! ✨\n\n"
-            "Cuando Sofía recupera el cuaderno, le explica a Mateo "
-            "que había preparado sus dibujos y notas para un familiar.\n\n"
-            "¿Recuerdas quién era esa persona?"
-        )
+        return """
+¡Hay una pista en el cuento! ✨
 
-    # RESPUESTA GENERAL PARA PREGUNTAS SOBRE LA HISTORIA
+Cuando Sofía recupera el cuaderno, explica que había preparado
+sus dibujos y notas para un familiar.
+
+¿Recuerdas quién era esa persona?
+"""
+
+    if contiene(texto, [
+        "problema principal", "cual fue el problema",
+        "que problema tuvo sofia"
+    ]):
+        return """
+¡Vamos a identificar el problema principal! 🔎
+
+Al comienzo, un personaje encuentra algo que otra persona
+había perdido.
+
+• ¿Qué objeto se perdió?
+• ¿Cómo se sentía su dueña?
+• ¿Qué hizo Mateo para solucionar el problema?
+
+Une esas tres pistas y cuéntame tu respuesta.
+"""
+
+    if contiene(texto, [
+        "que ensena", "ensenanza", "moraleja", "mensaje del cuento"
+    ]):
+        return respuesta_reflexiva()
+
+    return None
+
+
+# ==================================================
+# 9. COORDINADOR DEL CHATBOT
+# ==================================================
+def responder_leo(pregunta):
+    texto = normalizar(pregunta)
+
+    if not texto:
+        return "Escribe una pregunta para que podamos trabajar juntos."
+
+    # Orden de prioridad:
+    # 1. Resistencia adversarial
+    # 2. Fuera de alcance
+    # 3. Inferencia y reflexión
+    # 4. Comprensión directa
+    # 5. Respuesta general
+
+    if es_intento_de_copiar(texto):
+        return respuesta_adversarial()
+
+    if es_tema_ajeno(texto):
+        return respuesta_fuera_de_alcance()
+
+    if es_pregunta_reflexiva(texto):
+        return respuesta_reflexiva()
+
+    respuesta = respuesta_directa(texto)
+
+    if respuesta:
+        return respuesta
+
+    # Pregunta relacionada con la lectura que aún no se reconoce.
     palabras_del_cuento = [
         "mateo", "sofia", "cuaderno", "abuela", "parque",
         "historia", "cuento", "personaje", "lectura",
         "honesto", "honestidad", "ayudar", "perdio", "perdido",
-        "perder", "ensenanza", "dibujos", "notas"
+        "dibujos", "notas"
     ]
 
-    if contiene_alguna(consulta, palabras_del_cuento):
-        return (
-            "¡Vamos a resolverlo juntos! 📖\n\n"
-            "Lee nuevamente el cuento y busca el párrafo que "
-            "se relacione con tu pregunta.\n\n"
-            "¿Qué palabra, acción o detalle te parece más importante? "
-            "Escribe lo que entendiste y te ayudaré a reflexionar."
-        )
+    if contiene(texto, palabras_del_cuento):
+        return """
+¡Vamos a resolverlo juntos! 📖
 
-    # NO HAY UNA RESPUESTA PREPARADA
-    return (
-        "¡Estoy aquí para ayudarte a comprender! 🦁📚\n\n"
-        "No tengo una pista específica para esa pregunta todavía. "
-        "Intenta formularla de otra manera o vuelve a leer el cuento.\n\n"
-        "Puedes preguntarme sobre los personajes, las emociones, "
-        "el problema principal o la enseñanza de la historia."
-    )
+Lee nuevamente el párrafo relacionado con tu pregunta.
+
+🔎 Piensa:
+• ¿Qué sucedió en esa parte?
+• ¿Qué hizo o sintió el personaje?
+• ¿Qué pista del texto te ayuda a responder?
+
+Escribe lo que entendiste y te ayudaré a reflexionar.
+"""
+
+    return """
+¡Hola! 🦁 Soy LEO-IA y mi especialidad es la comprensión lectora.
+
+Puedo ayudarte a analizar los personajes, los acontecimientos,
+las emociones y la enseñanza de «El cuaderno perdido».
+
+Intenta formular tu pregunta relacionándola con la historia.
+¡Vamos a descubrir las respuestas juntos! 📚
+"""
 
 
-# ==========================================
-# CUESTIONARIO INTERACTIVO
-# ==========================================
+# ==================================================
+# 10. CUESTIONARIO CON CALIFICACIÓN AUTOMÁTICA
+# ==================================================
 st.divider()
 st.header("✏️ Comprueba lo que comprendiste")
 st.write("Selecciona una respuesta para cada pregunta.")
@@ -384,6 +546,7 @@ respuestas_usuario = {}
 
 for numero, (pregunta, datos) in enumerate(preguntas.items(), start=1):
     st.markdown(f"**{numero}. {pregunta}**")
+
     respuestas_usuario[pregunta] = st.radio(
         "Elige tu respuesta:",
         datos["opciones"],
@@ -394,8 +557,8 @@ for numero, (pregunta, datos) in enumerate(preguntas.items(), start=1):
 
 if st.button("✅ Revisar mis respuestas", type="primary"):
     sin_responder = [
-        pregunta for pregunta, respuesta in respuestas_usuario.items()
-        if respuesta is None
+        p for p, r in respuestas_usuario.items()
+        if r is None
     ]
 
     if sin_responder:
@@ -407,7 +570,9 @@ if st.button("✅ Revisar mis respuestas", type="primary"):
         puntaje = 0
         st.header("📋 Tus resultados")
 
-        for numero, (pregunta, datos) in enumerate(preguntas.items(), start=1):
+        for numero, (pregunta, datos) in enumerate(
+            preguntas.items(), start=1
+        ):
             respuesta = respuestas_usuario[pregunta]
 
             if respuesta == datos["correcta"]:
@@ -417,8 +582,8 @@ if st.button("✅ Revisar mis respuestas", type="primary"):
                 )
             else:
                 st.error(
-                    f"{numero}. La respuesta correcta es: "
-                    f"{datos['correcta']}."
+                    f"{numero}. Revisa esta respuesta. "
+                    f"La respuesta correcta es: {datos['correcta']}."
                 )
                 st.write(datos["explicacion"])
 
@@ -440,23 +605,25 @@ if st.button("✅ Revisar mis respuestas", type="primary"):
                 "y responder otra vez."
             )
 
-# ==========================================
-# CHATBOT LEO-IA
-# ==========================================
+
+# ==================================================
+# 11. CHATBOT LEO-IA
+# ==================================================
 st.divider()
 st.header("💬 Pregúntale a LEO-IA")
 st.write(
-    "Escribe una pregunta sobre la historia. LEO-IA te dará pistas "
-    "para ayudarte a pensar y encontrar tus propias respuestas."
+    "Haz preguntas sobre la historia. Te daré pistas para que "
+    "pienses, infieras y encuentres tus propias respuestas."
 )
 
-pregunta_libre = st.text_input(
-    "Tu pregunta:",
-    placeholder="Ejemplo: ¿Por qué estaba triste Sofía?",
-    key="consulta_leo"
-)
+with st.form("formulario_chat"):
+    pregunta_libre = st.text_input(
+        "Escribe tu pregunta:",
+        placeholder="Ejemplo: ¿Por qué estaba triste Sofía?"
+    )
+    consultar = st.form_submit_button("🔎 Consultar a LEO-IA")
 
-if st.button("🔎 Consultar a LEO-IA"):
+if consultar:
     if not pregunta_libre.strip():
         st.warning("Primero escribe una pregunta.")
     else:
@@ -464,9 +631,9 @@ if st.button("🔎 Consultar a LEO-IA"):
         st.markdown("### 🦁 LEO-IA responde")
         st.write(respuesta)
 
-# ==========================================
-# PIE DE PÁGINA
-# ==========================================
+# ==================================================
+# 12. PIE DE PÁGINA
+# ==================================================
 st.divider()
 st.caption("🦁 LEO-IA | Leer, comprender y aprender.")
 st.caption(
