@@ -1,21 +1,28 @@
 
 import streamlit as st
+import unicodedata
+import re
 
+# ==========================================
+# CONFIGURACIÓN
+# ==========================================
 st.set_page_config(
     page_title="LEO-IA | Comprensión lectora",
-    page_icon="📚",
-    layout="wide"
+    page_icon="🦁",
+    layout="centered"
+)
+
+st.title("🦁 LEO-IA")
+st.subheader("¡Aprendamos a comprender leyendo!")
+st.write(
+    "Lee la historia de Mateo y responde las preguntas. "
+    "LEO-IA te ayudará a comprobar lo que comprendiste."
 )
 
 # ==========================================
-# CINCO CUENTOS
+# HISTORIA
 # ==========================================
-
-lecturas = {
-    "El cuaderno perdido": {
-        "emoji": "📘",
-        "descripcion": "Descubre cómo Mateo ayuda a una niña a recuperar su cuaderno.",
-        "texto": """
+lectura = """
 Una mañana, Mateo caminaba hacia el colegio por un parque.
 Mientras caminaba, encontró un cuaderno azul que tenía dibujos
 y algunas notas en sus páginas.
@@ -30,365 +37,250 @@ el cuaderno azul era suyo y se lo mostró.
 
 Sofía se puso muy contenta al recuperarlo. Le explicó a Mateo
 que en el cuaderno tenía dibujos y notas que había preparado
-para su abuela. Sofía agradeció a Mateo por su honestidad
-y por ayudarla.
+para su abuela.
 
-Desde ese día, los dos se hicieron amigos. La historia nos enseña
-que debemos ser honestos, ayudar a los demás y devolver las cosas
-que no nos pertenecen.
-""",
-        "preguntas": [
-            ("¿Cómo se llamaba el niño que encontró el cuaderno?",
-             "Mateo."),
-            ("¿De qué color era el cuaderno?",
-             "Era de color azul."),
-            ("¿Cómo se llamaba la niña que perdió el cuaderno?",
-             "Se llamaba Sofía."),
-            ("¿Para quién había preparado Sofía los dibujos y las notas?",
-             "Para su abuela."),
-            ("¿Qué enseñanza nos deja la historia?",
-             "Debemos ser honestos, ayudar a los demás y devolver lo que no nos pertenece.")
-        ]
+Sofía agradeció a Mateo por su honestidad y por ayudarla.
+Desde ese día, los dos se hicieron amigos.
+
+La historia nos enseña que debemos ser honestos, ayudar a los
+demás y devolver las cosas que no nos pertenecen.
+"""
+
+with st.expander("📖 Leer la historia: El cuaderno perdido", expanded=True):
+    st.markdown(lectura)
+
+# ==========================================
+# BANCO DE PREGUNTAS Y RESPUESTAS
+# ==========================================
+preguntas = {
+    "¿Quién es el personaje principal de la historia?": {
+        "opciones": ["Mateo", "Sofía", "La abuela"],
+        "correcta": "Mateo",
+        "explicacion": "Mateo encuentra el cuaderno y ayuda a su dueña."
     },
-
-    "La niña y el árbol": {
-        "emoji": "🌳",
-        "descripcion": "Acompaña a Lucía y aprende por qué debemos cuidar la naturaleza.",
-        "texto": """
-Lucía era una niña que disfrutaba jugar en el jardín de su casa.
-Un día, su maestra les explicó a los estudiantes la importancia
-de cuidar la naturaleza y proteger los árboles.
-
-Lucía decidió sembrar una pequeña planta en el patio. Todos los
-días la regaba y se aseguraba de que recibiera suficiente luz
-del sol. También quitaba las hierbas que crecían a su alrededor.
-
-Pasaron varias semanas y la planta comenzó a crecer. Lucía estaba
-muy feliz porque veía cómo su esfuerzo daba resultados. Con el
-tiempo, la planta se convirtió en un pequeño árbol que ofrecía
-sombra a los pájaros.
-
-Lucía comprendió que cuidar la naturaleza requiere paciencia,
-responsabilidad y amor. Desde entonces, animó a su familia
-y a sus amigos a sembrar más árboles.
-""",
-        "preguntas": [
-            ("¿Cómo se llamaba la niña de la historia?",
-             "Se llamaba Lucía."),
-            ("¿Qué decidió sembrar Lucía?",
-             "Decidió sembrar una pequeña planta."),
-            ("¿Qué hacía todos los días para cuidar la planta?",
-             "La regaba y se aseguraba de que recibiera luz del sol."),
-            ("¿Qué animales encontraban sombra en el árbol?",
-             "Los pájaros."),
-            ("¿Qué enseñanza aprendió Lucía?",
-             "Debemos cuidar la naturaleza con paciencia y responsabilidad.")
-        ]
+    "¿Qué encontró Mateo en el parque?": {
+        "opciones": ["Una mochila roja", "Un cuaderno azul", "Un libro verde"],
+        "correcta": "Un cuaderno azul",
+        "explicacion": "El cuento dice que Mateo encontró un cuaderno azul con dibujos y notas."
     },
-
-    "Un amigo especial": {
-        "emoji": "🤝",
-        "descripcion": "Conoce a Andrés y descubre el valor de la amistad.",
-        "texto": """
-Andrés era un estudiante nuevo en la escuela. El primer día
-se sentó solo en el recreo porque todavía no conocía a nadie.
-
-Daniel, uno de sus compañeros, lo vio y decidió acercarse.
-Lo saludó, le preguntó su nombre y lo invitó a jugar con él
-y sus amigos.
-
-Al principio, Andrés estaba un poco tímido, pero pronto comenzó
-a conversar y a divertirse. Durante los siguientes días, Daniel
-lo ayudó a encontrar sus aulas y le explicó las actividades
-de la escuela.
-
-Andrés se sintió feliz porque había encontrado un buen amigo.
-Los dos comprendieron que una pequeña muestra de amabilidad
-puede hacer que otra persona se sienta bienvenida.
-
-Desde entonces, procuraron ayudar también a otros compañeros
-que llegaban nuevos a la escuela.
-""",
-        "preguntas": [
-            ("¿Cómo se llamaba el estudiante nuevo?",
-             "Se llamaba Andrés."),
-            ("¿Qué hizo Daniel cuando vio a Andrés solo?",
-             "Se acercó, lo saludó y lo invitó a jugar."),
-            ("¿Cómo se sentía Andrés al principio?",
-             "Se sentía tímido."),
-            ("¿Cómo ayudó Daniel a su compañero?",
-             "Lo ayudó a encontrar sus aulas y le explicó las actividades."),
-            ("¿Qué enseñanza nos deja esta historia?",
-             "Debemos ser amables e incluir a las personas que necesitan compañía.")
-        ]
+    "¿Por qué estaba triste Sofía?": {
+        "opciones": [
+            "Porque llegó tarde al colegio",
+            "Porque perdió su cuaderno",
+            "Porque discutió con Mateo"
+        ],
+        "correcta": "Porque perdió su cuaderno",
+        "explicacion": "Sofía estaba triste porque había perdido su cuaderno."
     },
-
-    "El perro aventurero": {
-        "emoji": "🐶",
-        "descripcion": "Acompaña a Toby en una aventura en la que ayuda a otro animal.",
-        "texto": """
-Toby era un perro curioso que vivía con una familia en una casa
-cerca del campo. Le encantaba correr por el jardín y observar
-las mariposas.
-
-Una mañana, Toby vio una mariposa de muchos colores y comenzó
-a seguirla. Sin darse cuenta, llegó hasta un camino que nunca
-había recorrido. Allí escuchó el sonido de un pequeño cachorro
-que estaba atrapado entre unas ramas.
-
-Toby se acercó y ladró para llamar la atención. Un campesino
-que trabajaba cerca escuchó los ladridos, se acercó y ayudó
-al cachorro a salir.
-
-Después, el campesino acompañó a los dos perros hasta un lugar
-seguro. Toby regresó a casa y su familia se alegró mucho
-de verlo.
-
-Aunque Toby era aventurero, aprendió que debía tener cuidado
-y no alejarse demasiado de casa.
-""",
-        "preguntas": [
-            ("¿Cómo se llamaba el perro protagonista?",
-             "Se llamaba Toby."),
-            ("¿Qué animal comenzó a seguir Toby?",
-             "Comenzó a seguir una mariposa."),
-            ("¿Qué encontró Toby entre las ramas?",
-             "Encontró un pequeño cachorro atrapado."),
-            ("¿Quién ayudó a rescatar al cachorro?",
-             "Un campesino."),
-            ("¿Qué aprendió Toby al final de la historia?",
-             "Aprendió que debía tener cuidado y no alejarse demasiado de casa.")
-        ]
+    "¿Qué hizo Mateo para ayudar?": {
+        "opciones": [
+            "Se quedó esperando a su dueño",
+            "Se llevó el cuaderno a su casa",
+            "Escondió el cuaderno"
+        ],
+        "correcta": "Se quedó esperando a su dueño",
+        "explicacion": "Mateo esperó en el parque para encontrar a la persona que lo había perdido."
     },
-
-    "La importancia de compartir": {
-        "emoji": "🎨",
-        "descripcion": "Aprende con Valentina y Miguel por qué es importante compartir.",
-        "texto": """
-En el salón de clases, Valentina llevó una caja de lápices
-de colores que había recibido como regalo. Le gustaba dibujar
-y colorear durante las actividades.
-
-Cuando la maestra pidió a los estudiantes que hicieran un dibujo,
-Valentina notó que su compañero Miguel no tenía colores.
-Él estaba preocupado porque no podía terminar su trabajo.
-
-Valentina decidió prestarle algunos de sus lápices. Miguel
-le agradeció y ambos comenzaron a dibujar. Al terminar,
-compararon sus dibujos y se felicitaron por sus trabajos.
-
-La maestra se sintió orgullosa al ver que los estudiantes
-se ayudaban entre sí. Les explicó que compartir no significa
-quedarse sin todo lo que tenemos, sino ofrecer algo para ayudar
-a otra persona cuando lo necesita.
-
-Desde ese día, Valentina y Miguel compartieron sus materiales
-y trabajaron juntos con alegría.
-""",
-        "preguntas": [
-            ("¿Qué llevó Valentina al salón de clases?",
-             "Llevó una caja de lápices de colores."),
-            ("¿Por qué estaba preocupado Miguel?",
-             "Porque no tenía colores para terminar su trabajo."),
-            ("¿Qué hizo Valentina para ayudarlo?",
-             "Le prestó algunos lápices de colores."),
-            ("¿Cómo se sintió la maestra al ver a los estudiantes?",
-             "Se sintió orgullosa."),
-            ("¿Qué significa compartir según la historia?",
-             "Significa ofrecer algo para ayudar a otra persona cuando lo necesita.")
-        ]
+    "¿Qué tenía Sofía en el cuaderno?": {
+        "opciones": [
+            "Dibujos y notas para su abuela",
+            "Juguetes y fotografías",
+            "Una lista de compras"
+        ],
+        "correcta": "Dibujos y notas para su abuela",
+        "explicacion": "Sofía había preparado dibujos y notas para su abuela."
+    },
+    "¿Qué ocurrió cuando Sofía recuperó el cuaderno?": {
+        "opciones": [
+            "Se puso muy contenta",
+            "Se fue sin decir nada",
+            "Regaló el cuaderno a Mateo"
+        ],
+        "correcta": "Se puso muy contenta",
+        "explicacion": "Sofía se alegró al recuperar su cuaderno y agradeció a Mateo."
+    },
+    "¿Qué enseñanza nos deja la historia?": {
+        "opciones": [
+            "Debemos quedarnos con lo que encontramos",
+            "Debemos ser honestos y ayudar a los demás",
+            "No debemos hablar con otras personas"
+        ],
+        "correcta": "Debemos ser honestos y ayudar a los demás",
+        "explicacion": "La historia enseña la importancia de la honestidad y de devolver lo ajeno."
     }
 }
 
 # ==========================================
-# ESTADO DE LA APLICACIÓN
+# FUNCIONES
 # ==========================================
-
-if "cuento_seleccionado" not in st.session_state:
-    st.session_state.cuento_seleccionado = None
-
-if "pregunta_actual" not in st.session_state:
-    st.session_state.pregunta_actual = 0
-
-if "respuestas" not in st.session_state:
-    st.session_state.respuestas = {}
-
-if "actividad_terminada" not in st.session_state:
-    st.session_state.actividad_terminada = False
-
-
-def reiniciar_actividad():
-    st.session_state.pregunta_actual = 0
-    st.session_state.respuestas = {}
-    st.session_state.actividad_terminada = False
-
+def normalizar(texto):
+    texto = texto.lower().strip()
+    texto = unicodedata.normalize("NFD", texto)
+    texto = "".join(
+        caracter for caracter in texto
+        if unicodedata.category(caracter) != "Mn"
+    )
+    texto = re.sub(r"[^\w\s]", "", texto)
+    return texto
 
 # ==========================================
-# PANTALLA PRINCIPAL
+# ACTIVIDAD INTERACTIVA
 # ==========================================
-
-st.title("📚 LEO-IA")
-st.subheader("¡Bienvenido a tu aventura de lectura!")
-
-st.write(
-    "Selecciona el cuento que más te guste. "
-    "Lee con atención y demuestra cuánto comprendiste."
-)
-
 st.divider()
+st.header("✏️ Comprueba lo que comprendiste")
+st.write("Selecciona una respuesta para cada pregunta.")
 
-# Mostrar los cinco cuentos en tarjetas
-if st.session_state.cuento_seleccionado is None:
+respuestas_usuario = {}
 
-    st.markdown("### 📖 Escoge el cuento que deseas trabajar")
-
-    nombres = list(lecturas.keys())
-
-    # Dos tarjetas por fila
-    for inicio in range(0, len(nombres), 2):
-        columnas = st.columns(2)
-
-        for desplazamiento, columna in enumerate(columnas):
-            indice = inicio + desplazamiento
-
-            if indice >= len(nombres):
-                continue
-
-            nombre = nombres[indice]
-            cuento = lecturas[nombre]
-
-            with columna:
-                with st.container(border=True):
-                    st.markdown(
-                        f"## {cuento['emoji']} {nombre}"
-                    )
-                    st.write(cuento["descripcion"])
-                    st.caption("📚 1 lectura · 5 preguntas")
-
-                    if st.button(
-                        "Leer este cuento ➜",
-                        key=f"elegir_{indice}",
-                        use_container_width=True
-                    ):
-                        st.session_state.cuento_seleccionado = nombre
-                        reiniciar_actividad()
-                        st.rerun()
-
-    st.divider()
-    st.info(
-        "💡 Consejo: lee cada cuento con calma. "
-        "Puedes volver a consultar la historia mientras respondes."
+for numero, (pregunta, datos) in enumerate(preguntas.items(), start=1):
+    st.markdown(f"**{numero}. {pregunta}**")
+    respuestas_usuario[pregunta] = st.radio(
+        "Elige tu respuesta:",
+        datos["opciones"],
+        index=None,
+        key=f"pregunta_{numero}",
+        label_visibility="collapsed"
     )
 
-# ==========================================
-# PANTALLA DEL CUENTO SELECCIONADO
-# ==========================================
+if st.button("✅ Revisar mis respuestas", type="primary"):
+    sin_responder = [
+        pregunta for pregunta, respuesta in respuestas_usuario.items()
+        if respuesta is None
+    ]
 
-else:
-    nombre = st.session_state.cuento_seleccionado
-    cuento = lecturas[nombre]
-
-    if st.button("⬅️ Volver a los cinco cuentos"):
-        st.session_state.cuento_seleccionado = None
-        reiniciar_actividad()
-        st.rerun()
-
-    st.header(f"{cuento['emoji']} {nombre}")
-
-    with st.expander("📖 Leer el cuento completo", expanded=True):
-        st.write(cuento["texto"])
-
-    st.divider()
-
-    preguntas = cuento["preguntas"]
-    total = len(preguntas)
-
-    # ======================================
-    # HACER PREGUNTAS UNA POR UNA
-    # ======================================
-
-    if not st.session_state.actividad_terminada:
-        actual = st.session_state.pregunta_actual
-
-        if actual < total:
-            pregunta, respuesta_correcta = preguntas[actual]
-
-            st.subheader(f"✏️ Pregunta {actual + 1} de {total}")
-            st.progress((actual + 1) / total)
-            st.write(f"**{pregunta}**")
-
-            clave = f"{nombre}_{actual}"
-
-            with st.form(key=f"formulario_{nombre}_{actual}"):
-                respuesta = st.text_area(
-                    "Escribe tu respuesta:",
-                    value=st.session_state.respuestas.get(clave, ""),
-                    placeholder="Escribe aquí con tus propias palabras...",
-                    height=120
-                )
-
-                enviar = st.form_submit_button(
-                    "Guardar respuesta y continuar ➜",
-                    use_container_width=True
-                )
-
-            if enviar:
-                if not respuesta.strip():
-                    st.warning("Por favor, escribe tu respuesta.")
-                else:
-                    st.session_state.respuestas[clave] = respuesta.strip()
-
-                    if actual + 1 < total:
-                        st.session_state.pregunta_actual += 1
-                    else:
-                        st.session_state.actividad_terminada = True
-
-                    st.rerun()
-
-    # ======================================
-    # RESULTADOS AL FINALIZAR
-    # ======================================
-
-    if st.session_state.actividad_terminada:
-        st.success("🎉 ¡Terminaste todas las preguntas!")
-
-        st.header("📝 Revisa tus respuestas")
-        st.write(
-            "Lee tus respuestas y compáralas con las respuestas "
-            "sugeridas para comprobar tu comprensión."
+    if sin_responder:
+        st.warning(
+            f"Te faltan {len(sin_responder)} pregunta(s). "
+            "Responde todas antes de revisar."
         )
+    else:
+        puntaje = 0
+        st.header("📋 Tus resultados")
 
-        for i, (pregunta, sugerida) in enumerate(preguntas):
-            clave = f"{nombre}_{i}"
+        for numero, (pregunta, datos) in enumerate(preguntas.items(), start=1):
+            respuesta = respuestas_usuario[pregunta]
 
-            with st.container(border=True):
-                st.markdown(f"**Pregunta {i + 1}: {pregunta}**")
-                st.write("**Tu respuesta:**")
-                st.write(st.session_state.respuestas.get(clave, "Sin respuesta"))
-                st.write("**Respuesta sugerida:**")
-                st.write(sugerida)
+            if respuesta == datos["correcta"]:
+                puntaje += 1
+                st.success(f"{numero}. ¡Correcto! {datos['explicacion']}")
+            else:
+                st.error(
+                    f"{numero}. La respuesta correcta es: "
+                    f"{datos['correcta']}."
+                )
+                st.write(datos["explicacion"])
 
-        st.balloons()
-        st.markdown("### 🌟 ¡Excelente trabajo! Sigue leyendo y aprendiendo.")
+        porcentaje = round(puntaje / len(preguntas) * 100)
 
-        col1, col2 = st.columns(2)
+        st.divider()
+        st.subheader(f"🏆 Resultado: {puntaje} de {len(preguntas)}")
+        st.progress(porcentaje / 100)
+        st.write(f"Obtuviste el {porcentaje}% de respuestas correctas.")
 
-        with col1:
-            if st.button(
-                "🔄 Resolver este cuento otra vez",
-                use_container_width=True
-            ):
-                reiniciar_actividad()
-                st.rerun()
+        if puntaje == len(preguntas):
+            st.balloons()
+            st.success("¡Excelente! Comprendiste muy bien la historia.")
+        elif puntaje >= 5:
+            st.info("¡Muy bien! Lee nuevamente la historia para mejorar.")
+        else:
+            st.info(
+                "¡Sigue practicando! Puedes volver a leer la historia "
+                "y responder otra vez."
+            )
 
-        with col2:
-            if st.button(
-                "📚 Elegir otro cuento",
-                use_container_width=True
-            ):
-                st.session_state.cuento_seleccionado = None
-                reiniciar_actividad()
-                st.rerun()
-
+# ==========================================
+# CONSULTA SENCILLA SIN IA
+# ==========================================
 st.divider()
-st.caption("LEO-IA · Aplicación educativa de comprensión lectora")
+st.header("💬 Pregúntale a LEO-IA")
+st.write(
+    "Escribe una pregunta sobre la historia. "
+    "LEO-IA buscará una respuesta preparada basada en el cuento."
+)
+
+pregunta_libre = st.text_input(
+    "Tu pregunta:",
+    placeholder="Ejemplo: ¿Qué encontró Mateo?"
+)
+
+if st.button("🔎 Buscar respuesta"):
+    if not pregunta_libre.strip():
+        st.warning("Primero escribe una pregunta.")
+    else:
+        consulta = normalizar(pregunta_libre)
+
+        respuestas_conocidas = [
+            (
+                ["quien es mateo", "personaje principal", "protagonista"],
+                "Mateo es el personaje principal. Él encontró el cuaderno azul y ayudó a Sofía."
+            ),
+            (
+                ["que encontro mateo", "encontro en el parque", "que encontro"],
+                "Mateo encontró un cuaderno azul con dibujos y algunas notas."
+            ),
+            (
+                ["quien perdio el cuaderno", "de quien era el cuaderno", "quien era la duena"],
+                "El cuaderno pertenecía a Sofía."
+            ),
+            (
+                ["por que estaba triste sofia", "por que sofia estaba triste", "que le paso a sofia"],
+                "Sofía estaba triste porque había perdido su cuaderno."
+            ),
+            (
+                ["que hizo mateo", "como ayudo mateo", "como ayudo a sofia"],
+                "Mateo esperó para encontrar al dueño y le mostró el cuaderno a Sofía cuando ella apareció."
+            ),
+            (
+                ["que tenia el cuaderno", "que habia en el cuaderno", "que tenia sofia"],
+                "El cuaderno tenía dibujos y notas que Sofía había preparado para su abuela."
+            ),
+            (
+                ["que paso al final", "como termina", "final de la historia"],
+                "Sofía recuperó su cuaderno, agradeció a Mateo y los dos se hicieron amigos."
+            ),
+            (
+                ["ensenanza", "moraleja", "que aprendemos", "que nos ensena"],
+                "La historia nos enseña a ser honestos, ayudar a los demás y devolver las cosas que no nos pertenecen."
+            ),
+            (
+                ["donde encontro mateo", "en que lugar", "donde estaba mateo"],
+                "Mateo encontró el cuaderno mientras caminaba por un parque hacia el colegio."
+            ),
+            (
+                ["como se llamaba la nina", "nombre de la nina", "quien era sofia"],
+                "La niña se llamaba Sofía. Ella había perdido el cuaderno azul."
+            ),
+            (
+                ["para quien eran los dibujos", "para quien eran las notas", "abuela"],
+                "Los dibujos y las notas eran para la abuela de Sofía."
+            ),
+            (
+                ["por que debemos ser honestos", "que significa ser honesto"],
+                "En esta historia, ser honesto significa ayudar a devolver el cuaderno a su dueña en lugar de quedárselo."
+            )
+        ]
+
+        respuesta_encontrada = None
+
+        for palabras_clave, respuesta in respuestas_conocidas:
+            if any(normalizar(clave) in consulta for clave in palabras_clave):
+                respuesta_encontrada = respuesta
+                break
+
+        if respuesta_encontrada:
+            st.success("🦁 LEO-IA responde:")
+            st.write(respuesta_encontrada)
+        else:
+            st.info(
+                "No tengo una respuesta preparada para esa pregunta. "
+                "Prueba preguntando qué encontró Mateo, por qué estaba "
+                "triste Sofía o cuál es la enseñanza de la historia."
+            )
+
+# ==========================================
+# PIE DE PÁGINA
+# ==========================================
+st.divider()
+st.caption("🦁 LEO-IA | Leer, comprender y aprender.")
+st.caption("Versión educativa sin conexión a servicios de inteligencia artificial.")
+
