@@ -19,7 +19,7 @@ if not API_KEY:
 genai.configure(api_key=API_KEY)
 
 # Modelo compatible con claves nuevas
-modelo = genai.GenerativeModel("gemini-1.5-flash")
+modelo = genai.GenerativeModel("gemini-1.5-flash-001")
 # El cuento
 CUENTO = """
 El cuaderno perdido
