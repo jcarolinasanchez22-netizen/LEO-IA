@@ -16,27 +16,29 @@ st.subheader("Lengua y Literatura • Noveno Año de EGB • Ecuador")
 st.divider()
 
 # ==========================================
-# CONEXIÓN CON GEMINI
+# CLAVE API
 # ==========================================
 API_KEY = st.secrets.get("API_KEY", "")
 
 if not API_KEY:
     st.error(
-        "No se encuentra API_KEY. "
+        "No se encuentra la clave API. "
         "Configúrala en Settings → Secrets de Streamlit."
     )
     st.stop()
 
-# Crear cliente de Gemini
+# ==========================================
+# CONEXIÓN CON GEMINI
+# ==========================================
 try:
     cliente = genai.Client(api_key=API_KEY)
 except Exception as e:
-    st.error("No se pudo inicializar Gemini.")
+    st.error("No se pudo inicializar la conexión con Gemini.")
     st.code(str(e))
     st.stop()
 
-# Modelo de Gemini
-MODELO = "gemini-2.5-flash"
+# Modelo recomendado por el mensaje de error
+MODELO = "gemini-3.8-flash"
 
 # ==========================================
 # CUENTO
@@ -67,7 +69,7 @@ Desde ese día, se convirtieron en grandes amigos.
 """
 
 # ==========================================
-# MOSTRAR EL CUENTO
+# MOSTRAR LA LECTURA
 # ==========================================
 with st.expander("📖 Leer el cuento", expanded=False):
     st.markdown(CUENTO)
@@ -77,10 +79,11 @@ with st.expander("📖 Leer el cuento", expanded=False):
 # ==========================================
 MENSAJE_INICIAL = (
     "¡Hola! Soy LEO-IA, tu asistente de comprensión lectora. 🦁\n\n"
-    "No resolveré las actividades por ti, pero te ayudaré con "
-    "preguntas, pistas y explicaciones para que puedas comprender "
-    "mejor el cuento «El cuaderno perdido».\n\n"
-    "¡Empecemos! ¿Qué te gustaría descubrir de la lectura?"
+    "Te ayudaré a comprender el cuento «El cuaderno perdido» "
+    "mediante pistas, preguntas y explicaciones. "
+    "Mi objetivo es que aprendas a encontrar las respuestas "
+    "por ti mismo.\n\n"
+    "¿Qué te gustaría descubrir de la lectura?"
 )
 
 # ==========================================
@@ -94,13 +97,13 @@ if "historial" not in st.session_state:
         }
     ]
 
-# Mostrar mensajes anteriores
+# Mostrar la conversación
 for mensaje in st.session_state.historial:
     with st.chat_message(mensaje["role"]):
         st.markdown(mensaje["content"])
 
 # ==========================================
-# RECIBIR PREGUNTAS DEL ESTUDIANTE
+# PREGUNTA DEL ESTUDIANTE
 # ==========================================
 pregunta = st.chat_input(
     "Escribe tu pregunta sobre el cuento..."
@@ -108,7 +111,7 @@ pregunta = st.chat_input(
 
 if pregunta:
 
-    # Guardar pregunta
+    # Guardar la pregunta
     st.session_state.historial.append(
         {
             "role": "user",
@@ -120,83 +123,88 @@ if pregunta:
         st.markdown(pregunta)
 
     # ======================================
-    # INSTRUCCIONES PARA LEO-IA
+    # PREPARAR INSTRUCCIONES
     # ======================================
     instruccion = f"""
-Eres LEO-IA, un asistente educativo especializado en comprensión
-lectora para estudiantes de noveno año de EGB de Ecuador.
+Eres LEO-IA, un asistente educativo de comprensión lectora
+para estudiantes de noveno año de EGB de Ecuador.
 
-Tu misión es ayudar a los estudiantes a comprender una lectura
-mediante pistas, preguntas orientadoras y explicaciones sencillas.
+Tu trabajo es ayudar a los estudiantes a comprender el cuento
+mediante pistas, preguntas orientadoras y explicaciones claras.
 
-REGLAS IMPORTANTES:
-
-1. Basa tus respuestas en el cuento proporcionado.
-2. No inventes personajes, acontecimientos ni datos.
-3. No entregues inmediatamente la respuesta completa a las
-   actividades escolares.
-4. Orienta al estudiante con pistas relacionadas con el texto.
-5. Haz preguntas que le ayuden a razonar y encontrar la respuesta.
-6. Si el estudiante se equivoca, corrígelo amablemente y dale
-   otra oportunidad.
-7. Si solicita una explicación, explica el fragmento con claridad.
-8. Si pregunta por un personaje, ayúdalo a identificar sus
-   acciones y características.
-9. Si pregunta por la enseñanza del cuento, invítalo a reflexionar.
-10. Si la pregunta no se relaciona con el cuento, explícale
-    amablemente que hoy trabajarán la comprensión de esta lectura.
-11. Responde en español con lenguaje claro, educativo y amable.
-12. Evita respuestas demasiado largas.
+REGLAS:
+1. Responde en español con amabilidad y claridad.
+2. Basa tus respuestas en el cuento proporcionado.
+3. No inventes información que no aparezca en la lectura.
+4. Cuando el estudiante haga una pregunta escolar, ofrece
+   una pista antes de revelar la respuesta completa.
+5. Formula preguntas orientadoras que lo ayuden a razonar.
+6. Si se equivoca, corrígelo respetuosamente.
+7. Si pide explicar una parte del cuento, explícasela.
+8. Si pregunta por un personaje, orienta al estudiante para
+   reconocer sus acciones y características.
+9. Si pregunta por la enseñanza, ayúdalo a reflexionar.
+10. Si la pregunta no se relaciona con el cuento, invítalo
+    a regresar a la lectura.
+11. Evita respuestas demasiado largas.
+12. No afirmes que un dato está en el cuento si no aparece allí.
 
 CUENTO:
 {CUENTO}
 
-HISTORIAL DE LA CONVERSACIÓN:
+CONVERSACIÓN ANTERIOR:
 """
 
-    # Incorporar mensajes previos para mantener el contexto
-    for mensaje in st.session_state.historial[-10:-1]:
+    # Agregar los mensajes anteriores como contexto
+    for mensaje in st.session_state.historial[-11:-1]:
         rol = (
             "Estudiante"
             if mensaje["role"] == "user"
             else "LEO-IA"
         )
-        instruccion += f"\n{rol}: {mensaje['content']}\n"
+        instruccion += (
+            f"\n{rol}: {mensaje['content']}\n"
+        )
 
     instruccion += f"""
-Nueva pregunta del estudiante: {pregunta}
+PREGUNTA ACTUAL DEL ESTUDIANTE:
+{pregunta}
 
-Responde al estudiante siguiendo todas las reglas anteriores.
+Ayuda al estudiante a comprender la lectura con una pista
+o una pregunta orientadora apropiada.
 """
 
     # ======================================
-    # GENERAR RESPUESTA
+    # GENERAR RESPUESTA CON INTERACTIONS API
     # ======================================
     with st.chat_message("assistant"):
         with st.spinner("🦁 LEO-IA está pensando..."):
 
             try:
-                respuesta = cliente.models.generate_content(
+                respuesta = cliente.interactions.create(
                     model=MODELO,
-                    contents=instruccion
+                    input=instruccion
                 )
 
-                texto = respuesta.text
+                texto = respuesta.output_text
 
                 if not texto:
                     texto = (
-                        "No pude preparar una respuesta en este momento. "
-                        "Intenta formular tu pregunta de otra manera."
+                        "No pude preparar una respuesta esta vez. "
+                        "Intenta escribir tu pregunta de otra manera."
                     )
 
             except Exception as e:
-                st.error("No se pudo obtener la respuesta de Gemini.")
+                st.error(
+                    "No se pudo obtener la respuesta de Gemini. "
+                    "Este es el detalle técnico:"
+                )
                 st.code(str(e))
                 st.stop()
 
         st.markdown(texto)
 
-    # Guardar respuesta en el historial
+    # Guardar la respuesta del asistente
     st.session_state.historial.append(
         {
             "role": "assistant",
