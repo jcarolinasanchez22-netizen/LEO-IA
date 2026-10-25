@@ -1,213 +1,137 @@
 
+import os
 import streamlit as st
 from google import genai
+from google.genai import types
 
-# ==========================================
-# CONFIGURACIÓN DE LA APLICACIÓN
-# ==========================================
+# ----------------------------------------
+# CONFIGURACIÓN DE LA PÁGINA
+# ----------------------------------------
 st.set_page_config(
-    page_title="LEO-IA: Comprensión Lectora",
+    page_title="LEO-IA | Comprensión Lectora",
     page_icon="🦁",
-    layout="wide"
+    layout="centered"
 )
 
-st.title("🦁 LEO-IA — Asistente de Comprensión Lectora")
-st.subheader("Lengua y Literatura • Noveno Año de EGB • Ecuador")
-st.divider()
+st.title("🦁 LEO-IA")
+st.subheader("Tu compañero de comprensión lectora")
+st.write(
+    "Escribe una pregunta sobre una lectura o pega un texto "
+    "para que LEO-IA te ayude a comprenderlo."
+)
 
-# ==========================================
-# CLAVE API
-# ==========================================
-API_KEY = st.secrets.get("API_KEY", "")
+# ----------------------------------------
+# CONFIGURACIÓN DE GEMINI
+# ----------------------------------------
+try:
+    API_KEY = st.secrets["API_KEY"]
+except Exception:
+    API_KEY = os.getenv("API_KEY")
 
 if not API_KEY:
     st.error(
-        "No se encuentra la clave API. "
-        "Configúrala en Settings → Secrets de Streamlit."
+        "No se encontró la clave API. Configura API_KEY "
+        "en Streamlit Cloud → Settings → Secrets."
     )
     st.stop()
 
-# ==========================================
-# CONEXIÓN CON GEMINI
-# ==========================================
-try:
-    cliente = genai.Client(api_key=API_KEY)
-except Exception as e:
-    st.error("No se pudo inicializar la conexión con Gemini.")
-    st.code(str(e))
-    st.stop()
-
-# Modelo recomendado por el mensaje de error
 MODELO = "gemini-3.8-flash"
 
-# ==========================================
-# CUENTO
-# ==========================================
-CUENTO = """
-# El cuaderno perdido
-
-Cada mañana, Mateo caminaba hacia su colegio por un pequeño
-parque. Un lunes, mientras avanzaba entre los árboles, encontró
-algo en el suelo: un cuaderno de tapa azul oscuro. Al abrirlo,
-vio que estaba lleno de dibujos y notas escritas con letra
-muy bonita.
-
-—¿De quién será? —se preguntó Mateo.
-
-Lo llevó al colegio y preguntó a todos sus compañeros, pero
-nadie lo reconoció. Al día siguiente, volvió al parque y esperó.
-Al rato, vio a una niña que caminaba mirando el suelo con cara
-triste. Era Sofía, una niña de otro curso.
-
-—¿Buscas esto? —le preguntó Mateo mostrando el cuaderno.
-
-—¡Sí, es mío! —dijo ella con alegría—. Tiene todos mis dibujos
-y las notas para mi abuela. Muchas gracias.
-
-Mateo sonrió. Sintió una satisfacción inmensa al devolverlo.
-Desde ese día, se convirtieron en grandes amigos.
-"""
-
-# ==========================================
-# MOSTRAR LA LECTURA
-# ==========================================
-with st.expander("📖 Leer el cuento", expanded=False):
-    st.markdown(CUENTO)
-
-# ==========================================
-# MENSAJE INICIAL
-# ==========================================
-MENSAJE_INICIAL = (
-    "¡Hola! Soy LEO-IA, tu asistente de comprensión lectora. 🦁\n\n"
-    "Te ayudaré a comprender el cuento «El cuaderno perdido» "
-    "mediante pistas, preguntas y explicaciones. "
-    "Mi objetivo es que aprendas a encontrar las respuestas "
-    "por ti mismo.\n\n"
-    "¿Qué te gustaría descubrir de la lectura?"
-)
-
-# ==========================================
-# HISTORIAL DE CONVERSACIÓN
-# ==========================================
-if "historial" not in st.session_state:
-    st.session_state.historial = [
-        {
-            "role": "assistant",
-            "content": MENSAJE_INICIAL
-        }
-    ]
-
-# Mostrar la conversación
-for mensaje in st.session_state.historial:
-    with st.chat_message(mensaje["role"]):
-        st.markdown(mensaje["content"])
-
-# ==========================================
-# PREGUNTA DEL ESTUDIANTE
-# ==========================================
-pregunta = st.chat_input(
-    "Escribe tu pregunta sobre el cuento..."
-)
-
-if pregunta:
-
-    # Guardar la pregunta
-    st.session_state.historial.append(
-        {
-            "role": "user",
-            "content": pregunta
-        }
+try:
+    cliente = genai.Client(
+        api_key=API_KEY,
+        http_options=types.HttpOptions(timeout=30000)
     )
+except Exception as error:
+    st.error("No se pudo iniciar la conexión con Gemini.")
+    st.code(str(error))
+    st.stop()
 
-    with st.chat_message("user"):
-        st.markdown(pregunta)
+# ----------------------------------------
+# INTERFAZ PARA EL USUARIO
+# ----------------------------------------
+texto = st.text_area(
+    "📖 Escribe tu lectura o pregunta:",
+    height=200,
+    placeholder=(
+        "Ejemplo: Lee este cuento y dime quiénes son "
+        "los personajes principales..."
+    )
+)
 
-    # ======================================
-    # PREPARAR INSTRUCCIONES
-    # ======================================
-    instruccion = f"""
-Eres LEO-IA, un asistente educativo de comprensión lectora
-para estudiantes de noveno año de EGB de Ecuador.
+nivel = st.selectbox(
+    "🎓 ¿Para qué nivel educativo necesitas la explicación?",
+    [
+        "Educación básica elemental",
+        "Educación básica media",
+        "Educación básica superior",
+        "Bachillerato"
+    ]
+)
 
-Tu trabajo es ayudar a los estudiantes a comprender el cuento
-mediante pistas, preguntas orientadoras y explicaciones claras.
+# ----------------------------------------
+# GENERACIÓN DE RESPUESTAS
+# ----------------------------------------
+if st.button("✨ Consultar a LEO-IA", type="primary"):
+    if not texto.strip():
+        st.warning("Por favor, escribe una lectura o una pregunta.")
+    else:
+        instruccion = f"""
+Eres LEO-IA, un asistente educativo especializado en comprensión lectora.
 
-REGLAS:
-1. Responde en español con amabilidad y claridad.
-2. Basa tus respuestas en el cuento proporcionado.
-3. No inventes información que no aparezca en la lectura.
-4. Cuando el estudiante haga una pregunta escolar, ofrece
-   una pista antes de revelar la respuesta completa.
-5. Formula preguntas orientadoras que lo ayuden a razonar.
-6. Si se equivoca, corrígelo respetuosamente.
-7. Si pide explicar una parte del cuento, explícasela.
-8. Si pregunta por un personaje, orienta al estudiante para
-   reconocer sus acciones y características.
-9. Si pregunta por la enseñanza, ayúdalo a reflexionar.
-10. Si la pregunta no se relaciona con el cuento, invítalo
-    a regresar a la lectura.
-11. Evita respuestas demasiado largas.
-12. No afirmes que un dato está en el cuento si no aparece allí.
+Tu objetivo es ayudar a estudiantes de: {nivel}.
 
-CUENTO:
-{CUENTO}
+Responde en español, con lenguaje claro, amable y adecuado para la edad.
+Si el usuario comparte una lectura:
+1. Identifica la idea principal.
+2. Resume el texto cuando sea útil.
+3. Explica palabras difíciles de forma sencilla.
+4. Responde las preguntas basándote en el texto.
+5. Si el usuario lo solicita, crea preguntas de comprensión lectora
+   y proporciona sus respuestas.
+6. No inventes información que no aparezca en la lectura.
+7. Si falta información, explícalo con amabilidad.
 
-CONVERSACIÓN ANTERIOR:
+Pregunta o lectura del estudiante:
+{texto}
 """
 
-    # Agregar los mensajes anteriores como contexto
-    for mensaje in st.session_state.historial[-11:-1]:
-        rol = (
-            "Estudiante"
-            if mensaje["role"] == "user"
-            else "LEO-IA"
-        )
-        instruccion += (
-            f"\n{rol}: {mensaje['content']}\n"
-        )
-
-    instruccion += f"""
-PREGUNTA ACTUAL DEL ESTUDIANTE:
-{pregunta}
-
-Ayuda al estudiante a comprender la lectura con una pista
-o una pregunta orientadora apropiada.
-"""
-
-    # ======================================
-    # GENERAR RESPUESTA CON INTERACTIONS API
-    # ======================================
-    with st.chat_message("assistant"):
-        with st.spinner("🦁 LEO-IA está pensando..."):
-
-            try:
+        try:
+            with st.spinner("🦁 LEO-IA está pensando..."):
                 respuesta = cliente.interactions.create(
                     model=MODELO,
                     input=instruccion
                 )
 
-                texto = respuesta.output_text
+            resultado = getattr(respuesta, "output_text", None)
 
-                if not texto:
-                    texto = (
-                        "No pude preparar una respuesta esta vez. "
-                        "Intenta escribir tu pregunta de otra manera."
-                    )
-
-            except Exception as e:
-                st.error(
-                    "No se pudo obtener la respuesta de Gemini. "
-                    "Este es el detalle técnico:"
+            if resultado and resultado.strip():
+                st.success("¡LEO-IA tiene una respuesta!")
+                st.markdown("### 💡 Respuesta")
+                st.write(resultado)
+            else:
+                st.warning(
+                    "Gemini respondió, pero no devolvió texto. "
+                    "Intenta nuevamente."
                 )
-                st.code(str(e))
-                st.stop()
+                with st.expander("Detalles técnicos"):
+                    st.write(respuesta)
 
-        st.markdown(texto)
+        except Exception as error:
+            st.error(
+                "No se pudo obtener una respuesta de Gemini. "
+                "Espera unos segundos e inténtalo otra vez."
+            )
+            st.info(
+                "La conexión tiene un tiempo máximo de espera de "
+                "30 segundos. Si el error continúa, revisa el modelo "
+                "configurado y los registros de la aplicación."
+            )
+            with st.expander("Ver detalles del error"):
+                st.code(str(error))
 
-    # Guardar la respuesta del asistente
-    st.session_state.historial.append(
-        {
-            "role": "assistant",
-            "content": texto
-        }
-    )
+# ----------------------------------------
+# PIE DE PÁGINA
+# ----------------------------------------
+st.divider()
+st.caption("🦁 LEO-IA | Aprender a leer, comprender y pensar.")
