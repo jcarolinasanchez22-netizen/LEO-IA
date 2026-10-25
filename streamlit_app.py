@@ -18,22 +18,17 @@ if not API_KEY:
 # Configurar con la clave AQ
 genai.configure(api_key=API_KEY)
 
-# Modelo compatible con claves nuevas
-modelo = genai.GenerativeModel("gemini-pro")
+# ✅ MODELO CORRECTO
+modelo = genai.GenerativeModel("gemini-1.5-flash")
+
 # El cuento
 CUENTO = """
 El cuaderno perdido
-
 Cada mañana, Mateo caminaba hacia su colegio por un pequeño parque. Un lunes, mientras avanzaba entre los árboles, encontró algo en el suelo: un cuaderno de tapa azul oscuro. Al abrirlo, vio que estaba lleno de dibujos y notas escritas con letra muy bonita.
-
 —¿De quién será? —se preguntó Mateo.
-
 Lo llevó al colegio y preguntó a todos sus compañeros, pero nadie lo reconoció. Al día siguiente, volvió al parque y esperó. Al rato, vio a una niña que caminaba mirando el suelo con cara triste. Era Sofía, una niña de otro curso.
-
 —¿Buscas esto? —le preguntó Mateo mostrando el cuaderno.
-
 —¡Sí, es mío! —dijo ella con alegría—. Tiene todos mis dibujos y las notas para mi abuela. Muchas gracias.
-
 Mateo sonrió. Sintió una satisfacción inmensa al devolverlo. Desde ese día, se convirtieron en grandes amigos.
 """
 
@@ -74,7 +69,6 @@ CUENTO:
 PREGUNTA: {pregunta}
 Responde con pistas, sin dar la respuesta completa.
 """
-
     try:
         respuesta = modelo.generate_content(instruccion)
         texto = respuesta.text
